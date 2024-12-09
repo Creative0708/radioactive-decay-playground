@@ -4,7 +4,7 @@ import serve from "rollup-plugin-serve";
 
 /** { @type import("rollup").InputOptions } */
 export default {
-  input: "src/main.js",
+  input: "src/main.ts",
   output: {
     file: "dist/bundle.js",
   },

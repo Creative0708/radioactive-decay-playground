@@ -16,5 +16,8 @@
     "watch": "rollup -c -w",
     "dev": "npm-run-all --parallel start watch",
     "start": "serve public"
+  },
+  "dependencies": {
+    "matter-js": "^0.20.0"
   }
 }

@@ -1,3 +1,13 @@
+import os.path as path
+dirname = path.abspath(path.join(__file__, path.pardir))
+
+try:
+    import nudel
+except ModuleNotFoundError:
+    import os
+    os.environ["PATH"] = path.join(dirname, "venv", "bin") + ":" + os.environ["PATH"]
+
+
 import math
 from typing import Any
 from nudel import get_active_ensdf, Nuclide
@@ -13,7 +23,12 @@ unit_second = [unit for unit in Units if unit.symb == "s"][0]
 unit_probability = [unit for unit in Units if unit.symb == ""][0]
 
 alpha_aliases = ["A"]
-beta_aliases = ["B-", "B-N", "EC+%B+"]
+beta_aliases = [
+    "B-", # beta decay
+    "B-N", # beta decay with delayed neutron
+    "EC+%B+", # electron capture with beta-plus decay, which if i'm reading wikipedia right
+              # is equivalent to beta-minus decay?
+]
 
 nuclides = ensdf.get_indexed_nuclides()
 
@@ -38,7 +53,7 @@ def process(mass, protons):
         # guess what? nudel errors on some isotopes
         return
     try:
-        name = f"{ELEMENTS[nuclide.protons]}-{nuclide.mass}"
+        elem = f"{ELEMENTS[nuclide.protons]}-{nuclide.mass}"
     except IndexError:
         # ?????????
         return
@@ -59,12 +74,12 @@ def process(mass, protons):
             alpha = sum_aliases(decay_ratio, alpha_aliases)
             beta = sum_aliases(decay_ratio, beta_aliases)
 
-            if alpha < 0.01 and beta <= 0.01:
+            if alpha < 0.01 and beta < 0.01:
                 # there's no alpha or beta decay in this level; skip it
                 continue
 
             if abs(alpha + beta - 1.0) > 0.1:
-                print(f"alpha + beta != 1 for {name}, ignoring:\n{decay_ratio = }")
+                print(f"alpha + beta != 1 for {elem}, ignoring:\n{decay_ratio = }")
                 continue
 
             # normalize alpha & beta
@@ -77,8 +92,10 @@ def process(mass, protons):
             # if there were no levels with alpha/beta decay, this isotope is probably not radioactive
             return
 
-        print(f"finished processing {name:>6}")
-        return name, {
+        print(f"finished processing {elem:>6}")
+        return elem, {
+            "sym": elem,
+
             "protons": nuclide.protons,
             "mass": nuclide.mass,
 
@@ -88,7 +105,7 @@ def process(mass, protons):
             "beta": beta,
         }
     except:
-        print(f"exception while processing {name}")
+        print(f"exception while processing {elem}")
         raise
 
 if __name__ == "__main__":
@@ -107,10 +124,9 @@ if __name__ == "__main__":
 
     data = {
         "symbols": ELEMENTS,
-        "decay_data": res,
+        "data": res,
     }
 
-    dirname = path.abspath(path.join(__file__, path.pardir))
     out_path = path.join(dirname, "dist", "data.json")
     print(f"outputting to {out_path}")
 
