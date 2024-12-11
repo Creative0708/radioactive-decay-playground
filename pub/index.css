@@ -1,0 +1,25 @@
+body {
+    margin: 0;
+    overflow: hidden;
+
+    width: 100vw;
+    height: 100vh;
+}
+body.nojs {
+    display: grid;
+    place-items: center;
+}
+
+.search-box {
+    position: absolute;
+    display: grid;
+    place-items: center;
+}
+.search-box > p {
+    margin-block: 0 0.5em;
+    color: #444;
+}
+
+* {
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+}

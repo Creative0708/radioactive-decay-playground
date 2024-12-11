@@ -1,51 +1,46 @@
+from genericpath import exists
 import os.path as path
+from re import I
 dirname = path.abspath(path.join(__file__, path.pardir))
-
-try:
-    import nudel
-except ModuleNotFoundError:
-    import os
-    os.environ["PATH"] = path.join(dirname, "venv", "bin") + ":" + os.environ["PATH"]
-
 
 import math
 from typing import Any
-from nudel import get_active_ensdf, Nuclide
-from nudel.util import Units, ELEMENTS
-from threading import Lock
 import time
 
-start_time = time.time()
+try:
+    from nudel import Nuclide
+    from nudel.util import Units, ELEMENTS
 
-ensdf = get_active_ensdf()
+    unit_second = [unit for unit in Units if unit.symb == "s"][0]
+    unit_probability = [unit for unit in Units if unit.symb == ""][0]
 
-unit_second = [unit for unit in Units if unit.symb == "s"][0]
-unit_probability = [unit for unit in Units if unit.symb == ""][0]
+    alpha_aliases = ["A"]
+    beta_aliases = [
+        "B-", # beta decay
+        "B-N", # beta decay with delayed neutron?
+        "EC+%B+", # electron capture with beta-plus decay, which if i'm reading wikipedia right is equivalent to beta-minus decay?
+    ]
 
-alpha_aliases = ["A"]
-beta_aliases = [
-    "B-", # beta decay
-    "B-N", # beta decay with delayed neutron
-    "EC+%B+", # electron capture with beta-plus decay, which if i'm reading wikipedia right
-              # is equivalent to beta-minus decay?
-]
+    def sum_aliases(vals: dict[str, Any], aliases: list[str]):
+        tot = 0
+        for alias in aliases:
+            val = vals.get(alias)
+            if val is None:
+                continue
+            val = val.cast_to_unit(unit_probability).val
+            if math.isnan(val):
+                continue
+            tot += val
+        return tot
 
-nuclides = ensdf.get_indexed_nuclides()
+except ModuleNotFoundError:
+    # silently ignore; process_isotopes() will execvp the process with the correct path anyways
+    pass
 
-def sum_aliases(vals: dict[str, Any], aliases: list[str]):
-    tot = 0
-    for alias in aliases:
-        val = vals.get(alias)
-        if val is None:
-            continue
-        val = val.cast_to_unit(unit_probability).val
-        if math.isnan(val):
-            continue
-        tot += val
-    return tot
-
-def process(mass, protons):
-    global nuclide_counter
+def process_isotope(mass, protons):
+    if mass == 0 or protons == 0:
+        # ????
+        return
 
     try:
         nuclide = Nuclide(mass, protons)
@@ -75,7 +70,7 @@ def process(mass, protons):
             beta = sum_aliases(decay_ratio, beta_aliases)
 
             if alpha < 0.01 and beta < 0.01:
-                # there's no alpha or beta decay in this level; skip it
+                # there's no alpha or nebeta decay in this level; skip it
                 continue
 
             if abs(alpha + beta - 1.0) > 0.1:
@@ -108,26 +103,87 @@ def process(mass, protons):
         print(f"exception while processing {elem}")
         raise
 
-if __name__ == "__main__":
-    import os.path as path, json
-    from multiprocessing import Pool
+def process_isotopes():
+    try:
+        import nudel
+    except ModuleNotFoundError:
+        import os, sys
+        already_tried_key = "MAKE_JSON_ALREADY_TRIED"
+        if os.environ.get(already_tried_key):
+            raise
+
+        bin_path = path.join(dirname, "venv", "bin")
+        if not path.exists(bin_path):
+            raise Exception("venv doesn't exist :( try `python3 -m venv venv` then install from requirements.txt in there")
+        os.environ["PATH"] = bin_path + ":" + os.environ["PATH"]
+        os.environ[already_tried_key] = "1"
+
+        os.execvpe("python3", ["python3", *sys.argv], os.environ)
+
+    ensdf = nudel.get_active_ensdf()
+
+    nuclides = ensdf.get_indexed_nuclides()
+
     print(f"loaded {len(nuclides)} nuclides")
+
+    from multiprocessing import Pool
 
     res = {}
     with Pool() as pool:
-        for isotope_res in pool.starmap(process, nuclides):
+        start_time = time.time()
+        for isotope_res in pool.starmap(process_isotope, nuclides):
             if isotope_res is None:
                 continue
             (name, data) = isotope_res
             res[name] = data
+        total_time = time.time() - start_time
+        print(f"finished processing in {total_time:.03}s")
+
+    return res
 
 
-    data = {
-        "symbols": ELEMENTS,
-        "data": res,
-    }
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog="make_json.py",
+        description="Creates the dataset for the project"
+    )
+
+    parser.add_argument("-n", "--no-process-ensdf", action="store_true", help="read ensdf data from already-processed json file instead of processing from installed ensdf")
+    args = parser.parse_args()
 
     out_path = path.join(dirname, "dist", "data.json")
+
+    import json
+
+    if args.no_process_ensdf:
+        with open(out_path, "r") as f:
+            data = json.load(f)["data"]
+    else:
+        data = process_isotopes()
+
+    with open(path.join(dirname, "abundances.json"), "r") as f:
+        abundances = json.load(f)
+
+    with open(path.join(dirname, "ptable.json"), "r") as f:
+        unfiltered = json.load(f)
+        elements = [
+            val and ({
+            key: val[key]
+            for key in [
+                "element",
+                "symbol",
+                "type"
+            ]}) for val in unfiltered
+        ]
+
+    data = {
+        "abundances": abundances,
+        "elements": elements,
+        "data": data,
+    }
+
     print(f"outputting to {out_path}")
 
     with open(out_path, "w") as f:

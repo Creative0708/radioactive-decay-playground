@@ -1,9 +1,7 @@
-export const jsonPromise = import("../scripts/dist/data.json");
-
 export type Sym = string;
 
 export interface Isotope {
-  elem: Sym;
+  sym: Sym;
 
   protons: number;
   mass: number;
@@ -13,25 +11,60 @@ export interface Isotope {
   beta: number;
 }
 
+export type ElementType =
+  | "Non-Metal"
+  | "Noble Gas"
+  | "Alkali Metal"
+  | "Alkaline Earth Metal"
+  | "Metalloid"
+  | "Halogen"
+  | "Post-Transition Metal"
+  | "Transition Metal"
+  | "Lanthanide"
+  | "Actinide";
+
+export interface PElement {
+  element: string;
+  symbol: string;
+  type: ElementType;
+}
+
 export interface Data {
-  symbols: string[];
+  elements: PElement[];
+  abundances: { [elem: Sym]: number };
   data: {
     [elem: Sym]: Isotope;
   };
 }
 
-// shhhhhhhhhhhhhh
-let data = null as any as Data;
+// dummy data until data loads
+let data: Data = {
+  elements: [],
+  abundances: {},
+  data: {},
+};
 export default data;
 
-jsonPromise.then((newData) => {
-  data = newData;
+export let allElements: Isotope[] = [];
+
+addEventListener("load", () => {
+  fetch("/pub/data.json")
+    .then((resp) => resp.json())
+    .then((newData) => {
+      Object.assign(data, newData);
+      allElements = [...Object.values(data.data)];
+
+      // @ts-ignore
+      window.allElements = allElements;
+      // @ts-ignore
+      window.data = data;
+    });
 });
 
 // utility functions
 
 export function getSym(mass: number, protons: number): Sym {
-  const elem = data.symbols[protons];
+  const elem = data.elements[protons].symbol;
 
   return `${elem}-${mass}`;
 }

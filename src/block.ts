@@ -10,6 +10,11 @@ export class Block {
     this.composition = { [all]: 1.0 };
   }
 
+  /**
+    Simulates radioactive decay for the specified time.
+
+    @param time The amount of time to simulate, in seconds.
+  */
   tick(time: number) {
     const isotopes = Object.keys(this.composition).map(
       (isotope) => data.data[isotope],
@@ -33,7 +38,7 @@ export class Block {
     });
 
     for (const isotope of isotopes) {
-      const sym = isotope.elem;
+      const sym = isotope.sym;
 
       // this math isn't perfect but it's close enough for practical purposes.
       // also everything still sums to 1 and i'm not doing calculus for this
