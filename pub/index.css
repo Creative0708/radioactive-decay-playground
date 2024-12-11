@@ -20,6 +20,10 @@ body.nojs {
     color: #444;
 }
 
+[hidden] {
+    visibility: hidden;
+}
+
 * {
     font-family: "Roboto", "Helvetica", "Arial", sans-serif;
 }

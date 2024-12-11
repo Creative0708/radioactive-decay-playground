@@ -1,15 +1,22 @@
 export type Sym = string;
 
-export interface Isotope {
+export type Isotope = {
   sym: Sym;
 
   protons: number;
   mass: number;
 
-  half_life: number;
-  alpha: number;
-  beta: number;
-}
+  abundance: number;
+} & (
+  | {
+      half_life: number;
+      alpha: number;
+      beta: number;
+    }
+  | {
+      half_life: null;
+    }
+);
 
 export type ElementType =
   | "Non-Metal"
@@ -27,12 +34,14 @@ export interface PElement {
   element: string;
   symbol: string;
   type: ElementType;
+
+  // hex color encoded as an integer
+  cpkHexColor: number;
 }
 
 export interface Data {
   elements: PElement[];
-  abundances: { [elem: Sym]: number };
-  data: {
+  isotopes: {
     [elem: Sym]: Isotope;
   };
 }
@@ -40,8 +49,7 @@ export interface Data {
 // dummy data until data loads
 let data: Data = {
   elements: [],
-  abundances: {},
-  data: {},
+  isotopes: {},
 };
 export default data;
 
@@ -52,7 +60,7 @@ addEventListener("load", () => {
     .then((resp) => resp.json())
     .then((newData) => {
       Object.assign(data, newData);
-      allElements = [...Object.values(data.data)];
+      allElements = [...Object.values(data.isotopes)];
 
       // @ts-ignore
       window.allElements = allElements;

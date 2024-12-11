@@ -1,8 +1,9 @@
 import { MouseState, render } from ".";
 import { canvas, ctx } from "../canvas";
 
-import * as matter from "./matter";
+import * as blocks from "./blocks";
 import * as sidebar from "./sidebar";
+import * as matter from "../matter";
 
 let lastFrameTime: null | number = null;
 export const paint = (frameTime: number) => {
@@ -30,9 +31,13 @@ export const paint = (frameTime: number) => {
   ctx.globalCompositeOperation = "destination-over";
 
   sidebar.paint();
-  matter.paint();
+  blocks.paint();
 
-  canvas.style.cursor = render.cursor ?? "auto";
+  if (matter.draggedBody) {
+    canvas.style.cursor = "grabbing";
+  } else {
+    canvas.style.cursor = render.cursor ?? "auto";
+  }
 };
 
 let globalMouseX = 0,

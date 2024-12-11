@@ -2,12 +2,16 @@ import data, { getSym, Isotope, type Sym } from "./data";
 
 export class Block {
   composition: { [isotope: Sym]: number };
+  width: number;
+  height: number;
 
   /**
-    Creates an element of a solid value
+    Create an element of a solid value.
   */
-  constructor(all: Sym) {
+  constructor(all: Sym, width: number, height: number) {
     this.composition = { [all]: 1.0 };
+    this.width = width;
+    this.height = height;
   }
 
   /**
@@ -17,7 +21,7 @@ export class Block {
   */
   tick(time: number) {
     const isotopes = Object.keys(this.composition).map(
-      (isotope) => data.data[isotope],
+      (isotope) => data.isotopes[isotope],
     );
     isotopes.sort((a, b) => {
       // math reasons; order the arrays such that isotopes higher in the decay chain are processed
@@ -38,6 +42,10 @@ export class Block {
     });
 
     for (const isotope of isotopes) {
+      if (isotope.half_life === null) {
+        // isotope is stable
+        continue;
+      }
       const sym = isotope.sym;
 
       // this math isn't perfect but it's close enough for practical purposes.
@@ -47,8 +55,9 @@ export class Block {
       this.composition[sym] -= total_decayed;
 
       // isotope.alpha + isotope.beta is guaranteed to == 1
-      const alpha_decayed = total_decayed * isotope.alpha;
-      const beta_decayed = total_decayed * isotope.beta;
+      // also, rollup typescript (not zed typescript tho) isn't smart enough to infer these :(
+      const alpha_decayed = total_decayed * (isotope as any).alpha;
+      const beta_decayed = total_decayed * (isotope as any).beta;
 
       if (alpha_decayed) {
         const decayed_to = getSym(isotope.mass - 4, isotope.protons - 2);
@@ -63,3 +72,5 @@ export class Block {
     }
   }
 }
+
+export const blocks: Map<number, Block> = new Map();

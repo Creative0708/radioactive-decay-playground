@@ -1,13 +1,29 @@
 export const canvas = document.createElement("canvas");
 export const ctx: CanvasRenderingContext2D = canvas.getContext("2d")!;
 
+export type ResizeHook = (width: number, height: number) => void;
+
+const hooks: ResizeHook[] = [];
+
+export function addResizeHook(hook: ResizeHook) {
+  hooks.push(hook);
+}
+
 const handleCanvasSize = () => {
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
+  const width = innerWidth,
+    height = innerHeight;
+  canvas.width = width;
+  canvas.height = height;
 
   ctx.lineWidth = 50;
   ctx.strokeStyle = "#000";
-  ctx.strokeRect(0, 0, innerWidth, innerHeight);
+  ctx.strokeRect(0, 0, width, height);
+
+  for (const hook of hooks) {
+    hook(width, height);
+  }
 };
-handleCanvasSize();
-addEventListener("resize", handleCanvasSize);
+addEventListener("load", () => {
+  handleCanvasSize();
+  addEventListener("resize", handleCanvasSize);
+});

@@ -1,15 +1,17 @@
 from genericpath import exists
 import os.path as path
-from re import I
 dirname = path.abspath(path.join(__file__, path.pardir))
 
 import math
 from typing import Any
-import time
+import time, json
+
+with open(path.join(dirname, "ptable.json"), "r") as f:
+    ptable = json.load(f)
 
 try:
     from nudel import Nuclide
-    from nudel.util import Units, ELEMENTS
+    from nudel.util import Units
 
     unit_second = [unit for unit in Units if unit.symb == "s"][0]
     unit_probability = [unit for unit in Units if unit.symb == ""][0]
@@ -48,7 +50,7 @@ def process_isotope(mass, protons):
         # guess what? nudel errors on some isotopes
         return
     try:
-        elem = f"{ELEMENTS[nuclide.protons]}-{nuclide.mass}"
+        sym = f"{ptable[nuclide.protons]["protons"]}-{nuclide.mass}"
     except IndexError:
         # ?????????
         return
@@ -74,7 +76,7 @@ def process_isotope(mass, protons):
                 continue
 
             if abs(alpha + beta - 1.0) > 0.1:
-                print(f"alpha + beta != 1 for {elem}, ignoring:\n{decay_ratio = }")
+                print(f"alpha + beta != 1 for {sym}, ignoring:\n{decay_ratio = }")
                 continue
 
             # normalize alpha & beta
@@ -87,9 +89,9 @@ def process_isotope(mass, protons):
             # if there were no levels with alpha/beta decay, this isotope is probably not radioactive
             return
 
-        print(f"finished processing {elem:>6}")
-        return elem, {
-            "sym": elem,
+        print(f"finished processing {sym:>6}")
+        return sym, {
+            "sym": sym,
 
             "protons": nuclide.protons,
             "mass": nuclide.mass,
@@ -100,7 +102,7 @@ def process_isotope(mass, protons):
             "beta": beta,
         }
     except:
-        print(f"exception while processing {elem}")
+        print(f"exception while processing {sym}")
         raise
 
 def process_isotopes():
@@ -155,36 +157,55 @@ if __name__ == "__main__":
 
     out_path = path.join(dirname, "dist", "data.json")
 
-    import json
-
     if args.no_process_ensdf:
         with open(out_path, "r") as f:
-            data = json.load(f)["data"]
+            isotopes = json.load(f)["isotopes"]
     else:
-        data = process_isotopes()
+        isotopes = process_isotopes()
+
+    elements = [
+        val and ({
+        key: val[key]
+        for key in [
+            "element",
+            "symbol",
+            "type",
+            "cpkHexColor",
+        ]}) for val in ptable
+    ]
+
 
     with open(path.join(dirname, "abundances.json"), "r") as f:
-        abundances = json.load(f)
+        abundances: dict = json.load(f)
+    for isotope in isotopes.values():
+        isotope["abundance"] = 0
+    elem_to_protons = { elem["symbol"]: elem["numberOfProtons"] for elem in ptable if elem }
+    for sym, val in abundances.items():
+        if sym not in isotopes:
+            # add stable element
+            if val is None:
+                continue
 
-    with open(path.join(dirname, "ptable.json"), "r") as f:
-        unfiltered = json.load(f)
-        elements = [
-            val and ({
-            key: val[key]
-            for key in [
-                "element",
-                "symbol",
-                "type"
-            ]}) for val in unfiltered
-        ]
+            element, mass = sym.split("-")
+            protons = elem_to_protons[element]
+            mass = int(mass)
+            isotopes[sym] = {
+                "sym": sym,
 
-    data = {
-        "abundances": abundances,
+                "protons": protons,
+                "mass": mass,
+
+                "half_life": None,
+            }
+
+        isotopes[sym]["abundance"] = val * 0.01
+
+    isotopes = {
         "elements": elements,
-        "data": data,
+        "isotopes": isotopes,
     }
 
     print(f"outputting to {out_path}")
 
     with open(out_path, "w") as f:
-        json.dump(data, f, separators=(",", ":"))
+        json.dump(isotopes, f, separators=(",", ":"))
