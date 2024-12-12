@@ -8,6 +8,9 @@ import * as matter from "../matter";
 let lastFrameTime: null | number = null;
 export const paint = (frameTime: number) => {
   if (lastFrameTime == null) lastFrameTime = frameTime;
+  if (!document.body.contains(canvas)) {
+    return;
+  }
 
   {
     render.width = canvas.width;

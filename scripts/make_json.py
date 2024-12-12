@@ -50,7 +50,7 @@ def process_isotope(mass, protons):
         # guess what? nudel errors on some isotopes
         return
     try:
-        sym = f"{ptable[nuclide.protons]["protons"]}-{nuclide.mass}"
+        sym = f"{ptable[nuclide.protons]["symbol"]}-{nuclide.mass}"
     except IndexError:
         # ?????????
         return
@@ -165,13 +165,12 @@ if __name__ == "__main__":
 
     elements = [
         val and ({
-        key: val[key]
-        for key in [
-            "element",
-            "symbol",
-            "type",
-            "cpkHexColor",
-        ]}) for val in ptable
+            "name": val["element"],
+            "symbol": val["symbol"],
+            "type": val["type"],
+            "cpkHexColor": val["cpkHexColor"],
+            "mass": val["atomicMass"]
+        }) for val in ptable
     ]
 
 

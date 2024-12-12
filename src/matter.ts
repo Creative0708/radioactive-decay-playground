@@ -17,8 +17,9 @@ export const engine = Engine.create();
 engine.gravity.y = 2;
 export const world = engine.world;
 
-export function add(body: Body | Body[]) {
+export function add(body: Body | Body[], isDragged = false) {
   Composite.add(world, body);
+  if (isDragged && !Array.isArray(body)) draggedBody = body;
 }
 export function remove(body: Body | Body[]) {
   Composite.remove(world, body);
@@ -92,10 +93,10 @@ function setAxisAlignedVertices(
 
   const centerX = (x1 + x2) / 2,
     centerY = (y1 + y2) / 2;
-  // @ts-ignore
   Body.setPosition(
     body,
     { x: xPos + centerX, y: centerY },
+    // @ts-ignore
     body === leftWall || body === rightWall,
   );
 
@@ -148,6 +149,12 @@ add([leftWall, rightWall, topWall, bottomWall]);
 export let draggedBody: null | Body = null;
 
 export function tick(delta: number) {
+  if (draggedBody && Math.abs(draggedBody.angle) > 0.01) {
+    draggedBody.angle =
+      draggedBody.angle - Math.round(draggedBody.angle / Math.PI) * Math.PI;
+    Body.setAngularVelocity(draggedBody, -draggedBody.angle * 0.2);
+  }
+
   Engine.update(engine, delta * 1000);
 
   for (const wall of [leftWall, rightWall, topWall, bottomWall]) {

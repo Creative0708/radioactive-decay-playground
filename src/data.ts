@@ -31,8 +31,11 @@ export type ElementType =
   | "Actinide";
 
 export interface PElement {
-  element: string;
+  name: string;
   symbol: string;
+
+  mass: number;
+
   type: ElementType;
 
   // hex color encoded as an integer

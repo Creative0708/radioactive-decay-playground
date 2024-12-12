@@ -7,6 +7,7 @@ import glob from "glob";
 import path from "path";
 import typescript from "@rollup/plugin-typescript";
 import commonjs from "@rollup/plugin-commonjs";
+import json from "@rollup/plugin-json";
 
 // Modified from https://github.com/rollup/plugins/blob/master/packages/html/src/index.ts
 function template({ attributes, files, meta, publicPath, title }) {
@@ -73,6 +74,7 @@ export default {
     watcher(["pub/**"]),
     nodeResolve(),
     commonjs(),
+    json(),
     typescript({
       resolveJsonModule: true,
       noImplicitAny: true,

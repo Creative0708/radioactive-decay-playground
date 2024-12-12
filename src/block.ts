@@ -29,8 +29,8 @@ export class Block {
       function key(val: Isotope): number {
         const protons = val.protons,
           neutrons = val.mass - protons;
-        const alpha = (protons + neutrons) / 2;
-        const beta = protons - neutrons;
+        const alpha = (protons + neutrons) / 4;
+        const beta = (protons - neutrons) / 2;
 
         // (alpha * 2) + beta == protons, (alpha * 2) - beta == neutrons
         if (!(alpha * 2 + beta == protons && alpha * 2 - beta == neutrons)) {
@@ -42,7 +42,7 @@ export class Block {
     });
 
     for (const isotope of isotopes) {
-      if (isotope.half_life === null) {
+      if (isotope?.half_life == null) {
         // isotope is stable
         continue;
       }
@@ -50,11 +50,11 @@ export class Block {
 
       // this math isn't perfect but it's close enough for practical purposes.
       // also everything still sums to 1 and i'm not doing calculus for this
-      const decayed_fraction = 2 ** (-time / isotope.half_life);
+      const decayed_fraction = 1 - 2 ** (-time / isotope.half_life);
       const total_decayed = this.composition[sym] * decayed_fraction;
       this.composition[sym] -= total_decayed;
 
-      // isotope.alpha + isotope.beta is guaranteed to == 1
+      // isotope.alpha + isotope.beta is guaranteed to === 1
       // also, rollup typescript (not zed typescript tho) isn't smart enough to infer these :(
       const alpha_decayed = total_decayed * (isotope as any).alpha;
       const beta_decayed = total_decayed * (isotope as any).beta;

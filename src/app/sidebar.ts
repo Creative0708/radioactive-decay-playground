@@ -7,7 +7,8 @@ import * as matter from "../matter";
 import { Bodies, Body, Composite } from "matter-js";
 import { Block, blocks } from "../block";
 import {
-  getDarkColorForElement as getDarkColorForElement,
+  formatSeconds,
+  getDarkColorForIsotope as getDarkColorForIsotope,
   rgbToHex,
 } from "../util";
 
@@ -42,21 +43,27 @@ let search = "";
           const [elem, mass] = iso.sym.split("-");
           return mass + elem;
         },
-        (iso) => `${data.elements[iso.protons].element}-${iso.mass}`,
+        (iso) => `${data.elements[iso.protons].name}-${iso.mass}`,
       ],
       // slightly nudge the score based on the abundance
       // so when searching for e.g "Uranium" the common ones go to the top (U-238, U-235)
-      scoreFn: (res) => res.score + res.obj.abundance * 1e-3,
+      // if not abundance, then how close it is to the "normal" atomic weight
+      scoreFn: (res) =>
+        res.score +
+        res.obj.abundance * 1e-3 +
+        (res.obj.mass - data.elements[res.obj.protons].mass) * 1e-6,
     });
   };
   inputEl.addEventListener("input", reprocess);
   inputEl.addEventListener("change", reprocess);
+  inputEl.value = "rn";
+  setTimeout(() => reprocess(), 200);
 
   searchBoxEl.appendChild(inputEl);
 }
 document.body.appendChild(searchBoxEl);
 
-const SIDEBAR_WIDTH = 256;
+const SIDEBAR_WIDTH = 290;
 
 export function paint() {
   const HANDLE_WIDTH = 20;
@@ -186,10 +193,10 @@ function paintNormalSidebar() {
     let row = 0,
       col = 0;
     for (const res of searchedElements) {
-      const ELEMENT_SIZE = 80;
+      const ELEMENT_SIZE = 100;
 
-      const xTrans = col * 100 + 35,
-        yTrans = row * 100 + 200;
+      const xTrans = col * 120 + 35,
+        yTrans = row * 120 + 200;
       if (yTrans > render.height) break;
 
       const transform = ctx.getTransform();
@@ -214,7 +221,7 @@ function paintNormalSidebar() {
             restitution: 0.5,
           },
         );
-        matter.add(body);
+        matter.add(body, true);
         blocks.set(body.id, new Block(iso.sym, 100, 60));
       } else if (interaction) {
         render.cursor = "pointer";
@@ -222,15 +229,22 @@ function paintNormalSidebar() {
 
       ctx.translate(xTrans, yTrans);
 
-      ctx.textAlign = "center";
+      ctx.textAlign = "left";
       ctx.textBaseline = "top";
       ctx.fillStyle = "#444";
       ctx.font = "40px" + render.font;
-      ctx.fillText(element, ELEMENT_SIZE / 2, 12);
+      ctx.fillText(element, 8, 12);
       ctx.font = "16px" + render.font;
-      ctx.fillText(mass, ELEMENT_SIZE / 2, 52);
+      ctx.fillText(mass, 10, 53);
+      ctx.font = "12px" + render.font;
+      ctx.textAlign = "right";
+      ctx.fillText(
+        iso.half_life === null ? "stable" : formatSeconds(iso.half_life),
+        94,
+        56,
+      );
 
-      const [r, g, b] = getDarkColorForElement(data.elements[iso.protons]);
+      const [r, g, b] = getDarkColorForIsotope(iso);
       ctx.fillStyle = rgbToHex(r + 128, g + 128, b + 128);
       ctx.strokeStyle = rgbToHex(r, g, b);
       ctx.lineWidth = 4;
