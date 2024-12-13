@@ -1,10 +1,10 @@
 import { Body, Query } from "matter-js";
-import * as matter from "../../matter";
-import { ctx } from "../../canvas";
-import { render } from "..";
-import { Block, blocks } from "../../block";
-import { getDarkColorForIsotope, rgbToHex } from "../../util";
-import data from "../../data";
+import * as matter from "../matter";
+import { ctx } from "../canvas";
+import { render } from ".";
+import { Block, blocks } from "../block";
+import { getDarkColorForIsotope, rgbToHex } from "../util";
+import data from "../data";
 
 enum BlockMouseState {
   NONE,

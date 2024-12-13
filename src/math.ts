@@ -1,4 +1,4 @@
-import { render } from "./app";
+import { render } from "./paint";
 
 export const TAU = Math.PI * 2;
 

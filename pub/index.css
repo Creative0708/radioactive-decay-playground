@@ -34,6 +34,8 @@ body.nojs {
     padding: 16px 32px 0;
     box-sizing: border-box;
 
+    z-index: 0;
+
     > h1 {
         font-size: 3em;
         font-weight: normal;
@@ -74,7 +76,7 @@ body.nojs {
     padding: 0 16px 16px 0;
     scrollbar-width: thin;
 
-    overflow-y: scroll;
+    overflow-y: auto;
 
     > span {
         grid-column: span 2;
@@ -108,12 +110,31 @@ body.nojs {
     }
 }
 
+#extra-options {
+    position: absolute;
+    top: 0;
+    right: -530px;
+    width: 500px;
+    padding: 1em;
+    box-sizing: border-box;
+
+    z-index: 1;
+}
+button {
+    border: none;
+    background: none;
+    font-size: 1rem;
+
+    cursor: pointer;
+}
+button:hover {
+    text-decoration: underline;
+}
+
 #canvas {
     position: absolute;
     top: 0;
     left: 0;
-
-    z-index: 1;
 }
 
 #timeshift-container {

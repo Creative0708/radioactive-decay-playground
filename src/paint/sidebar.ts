@@ -12,6 +12,8 @@ import {
   rgbToHex,
 } from "../util";
 
+import "./sidebar/extra_options";
+
 let sidebarPos = 0;
 let isSidebarOpen = true;
 
@@ -108,9 +110,6 @@ const reprocess = () => {
 };
 inputEl.addEventListener("input", reprocess);
 inputEl.addEventListener("change", reprocess);
-inputEl.value = "poloniu";
-
-dataPromise.then(reprocess);
 
 const SIDEBAR_WIDTH = 300;
 

@@ -1,6 +1,6 @@
 document.body.classList.remove("nojs");
 
-import { paint } from "./app/paint";
+import { paint } from "./paint/paint";
 
 const renderLoop = (frameTime: number) => {
   paint(frameTime);
