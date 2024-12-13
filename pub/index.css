@@ -108,25 +108,29 @@ body.nojs {
     }
 }
 
-.search-box,
-.time-container {
-    position: absolute;
-    display: grid;
-    place-items: center;
-}
-
 #canvas {
     position: absolute;
     top: 0;
     left: 0;
+
     z-index: 1;
 }
 
-.time-container {
+#timeshift-container {
     top: 0;
     right: 0;
     margin-top: 24px;
     width: 200px;
+
+    position: absolute;
+    display: grid;
+    place-items: center;
+
+    z-index: 2;
+
+    > p {
+        margin-block-start: 0;
+    }
 
     > label {
         position: absolute;

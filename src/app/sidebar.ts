@@ -166,13 +166,13 @@ export function paint() {
     }
     case TrashShowState.TRANSITIONING: {
       if (shouldShowTrash) {
-        trashOpacity += 20 * render.delta;
+        trashOpacity += 10 * render.delta;
         if (trashOpacity >= 1) {
           trashOpacity = 1;
           trashShowState = TrashShowState.VISIBLE;
         }
       } else {
-        trashOpacity -= 20 * render.delta;
+        trashOpacity -= 10 * render.delta;
         if (trashOpacity <= 0) {
           trashOpacity = 0;
           trashShowState = TrashShowState.HIDDEN;
@@ -192,13 +192,12 @@ export function paint() {
       ctx.globalAlpha = trashOpacity;
       paintTrash();
       ctx.fillStyle = "#ddd";
-      ctx.fillRect(0, 0, sidebarPos, render.height);
+      ctx.fillRect(0, 0, sidebarPos - 4, render.height);
       ctx.globalAlpha = 1;
     }
     if (trashOpacity < 1) {
       paintNormalSidebar();
     }
-    sidebarContentsEl.style.opacity = String(1 - trashOpacity);
   } else {
     sidebarContentsEl.hidden = true;
   }

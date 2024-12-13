@@ -43,6 +43,7 @@ export function paint() {
 
     paintBlock(block, blockState);
     if (blockState === BlockMouseState.HOVERED) {
+      render.cursor = "pointer";
     }
 
     ctx.resetTransform();

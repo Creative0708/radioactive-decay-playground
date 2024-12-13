@@ -42,9 +42,9 @@ export const paint = (frameTime: number) => {
   tooltip.paint();
 
   if (matter.draggedBody) {
-    canvas.style.cursor = "grabbing";
+    document.body.style.cursor = "grabbing";
   } else {
-    canvas.style.cursor = render.cursor ?? "auto";
+    document.body.style.cursor = render.cursor ?? "auto";
   }
 };
 

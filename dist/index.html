@@ -11,20 +11,27 @@
             Sorry!</noscript
         >
         <div class="container">
-            <div id="sidebar-container">
-                <div id="sidebar">
-                    <h1>Isotopes</h1>
-                    <p>Search</p>
-                    <input id="search-box" />
-                    <div id="sidebar-results"></div>
+            <div>
+                <div id="sidebar-container">
+                    <div id="sidebar">
+                        <h1>Isotopes</h1>
+                        <p>Search</p>
+                        <input id="search-box" />
+                        <div id="sidebar-results"></div>
+                    </div>
+                    <div id="sidebar-handle">
+                        <svg viewBox="0 0 3 4">
+                            <polyline points="1,1 2,2 1,3" />
+                        </svg>
+                    </div>
                 </div>
-                <div id="sidebar-handle">
-                    <svg viewBox="0 0 3 4">
-                        <polyline points="1,1 2,2 1,3" />
-                    </svg>
-                </div>
+                <canvas id="canvas"></canvas>
             </div>
-            <canvas id="canvas"></canvas>
+            <div id="timeshift-container">
+                <p>Time scaling</p>
+                <input id="timeshift-slider" />
+                <label for="timeshift-slider"></label>
+            </div>
         </div>
         <script src="main.js" type="module"></script>
     </body>

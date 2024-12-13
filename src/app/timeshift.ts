@@ -30,7 +30,7 @@ for (const [scale, unit, maxPow] of [
     });
   }
 }
-for (let multiplier = 1; multiplier <= 1e9; multiplier *= 10) {
+for (let multiplier = 1; multiplier <= 1e10; multiplier *= 10) {
   TIMESHIFTS.push({
     scale: 60 * 60 * 24 * 365.25 * multiplier,
     display:
@@ -44,21 +44,13 @@ for (let multiplier = 1; multiplier <= 1e9; multiplier *= 10) {
 
 const SECOND_OFFSET = TIMESHIFTS.findIndex((ts) => ts.scale === 1);
 
-const containerEl = document.createElement("div");
-containerEl.className = "time-container";
-{
-  const pEl = document.createElement("p");
-  pEl.textContent = "Time scaling";
-  containerEl.appendChild(pEl);
-}
-const labelEl = document.createElement("label");
-const sliderEl = document.createElement("input");
-labelEl.htmlFor = sliderEl.id = "time-slider";
+const containerEl = document.getElementById("timeshift-container")!;
+const labelEl = containerEl.querySelector("label")!;
+const sliderEl = containerEl.querySelector("input")!;
 sliderEl.type = "range";
 sliderEl.min = "0";
 sliderEl.max = String(TIMESHIFTS.length - 1);
 sliderEl.value = String(SECOND_OFFSET);
-containerEl.append(sliderEl, labelEl);
 
 let val = 0;
 let clockStrokeStyle = "";
@@ -85,8 +77,6 @@ const inputUpdate = () => {
 };
 sliderEl.addEventListener("input", inputUpdate);
 inputUpdate();
-
-document.body.appendChild(containerEl);
 
 let seconds = 0;
 export const paint = () => {
