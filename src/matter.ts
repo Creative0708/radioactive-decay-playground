@@ -24,7 +24,11 @@ export function remove(body: Body | Body[]) {
 
 export const WALL_CATEGORY = 1 << 8;
 
-const mouse = Mouse.create(canvas);
+const mouse = Mouse.create(document.createElement("div"));
+// no need for scrolling and if this isn't done, mouse will eat the scroll
+(mouse as any).mousewheel = () => {};
+Mouse.setElement(mouse, document.body);
+
 const mouseConstraint = MouseConstraint.create(engine, {
   mouse,
   constraint: {

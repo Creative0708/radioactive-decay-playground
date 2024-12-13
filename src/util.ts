@@ -22,16 +22,15 @@ export function getDarkColorForIsotope(
 }
 
 function formatNumber(num: number): string {
-  let digitsm1 = Math.log10(num) | 0;
+  let log10 = Math.log10(num) | 0;
 
-  if (num >= 1) {
-    if (digitsm1 > 3) return num.toExponential(2);
-    if (digitsm1 > 2) return num.toFixed(0);
-    return num.toFixed(2 - digitsm1);
-  } else {
-    if (digitsm1 < -2) return num.toExponential(2);
-    return num.toFixed(3 - digitsm1);
+  if (num >= 1 ? log10 > 3 : log10 < -2) {
+    return `${(num / 10 ** log10).toFixed(2)} ⋅ 10<sup>${log10}</sup>`;
   }
+  if (log10 > 2) {
+    return num.toFixed(0);
+  }
+  return num.toFixed(2 - log10);
 }
 
 import * as SI_UNITS_RAW from "./si_units.json";

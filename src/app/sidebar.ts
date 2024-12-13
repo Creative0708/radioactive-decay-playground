@@ -1,10 +1,10 @@
 import * as fuzzysort from "fuzzysort";
 import { MouseState, render } from ".";
-import { ctx } from "../canvas";
+import { canvas, ctx } from "../canvas";
 import { lerp } from "../math";
 import data, { allElements, dataPromise, Isotope } from "../data";
 import * as matter from "../matter";
-import { Bodies, Body, Composite } from "matter-js";
+import { Bodies } from "matter-js";
 import { Block, blocks } from "../block";
 import {
   formatSeconds,
@@ -23,50 +23,100 @@ enum TrashShowState {
 }
 let trashShowState = TrashShowState.HIDDEN;
 
-const searchBoxEl = document.createElement("div");
-searchBoxEl.className = "search-box";
-{
-  const searchBoxLabelEl = document.createElement("p");
-  searchBoxLabelEl.textContent = "Search";
-  searchBoxEl.appendChild(searchBoxLabelEl);
-}
-let searchedElements: ReadonlyArray<Fuzzysort.KeysResult<Isotope>> = [];
-let search = "";
-{
-  const inputEl = document.createElement("input");
-  const reprocess = () => {
-    search = inputEl.value;
-    searchedElements = fuzzysort.go(search, allElements, {
-      keys: [
-        "sym",
-        (iso) => {
-          const [elem, mass] = iso.sym.split("-");
-          return mass + elem;
-        },
-        (iso) => `${data.elements[iso.protons].name}-${iso.mass}`,
-      ],
-      // slightly nudge the score based on the abundance
-      // so when searching for e.g "Uranium" the common ones go to the top (U-238, U-235)
-      // if not abundance, then how close it is to the "normal" atomic weight
-      scoreFn: (res) =>
-        res.score +
-        res.obj.abundance * 1e-3 +
-        (res.obj.mass - data.elements[res.obj.protons].mass) * 1e-6,
-    });
-  };
-  inputEl.addEventListener("input", reprocess);
-  inputEl.addEventListener("change", reprocess);
-  inputEl.value = "poloniu";
+const sidebarEl = document.getElementById("sidebar-container")!;
+if (isSidebarOpen) sidebarEl.classList.add("sidebar-open");
+const sidebarContentsEl = document.getElementById("sidebar")!;
 
-  dataPromise.then(reprocess);
+const resultsEl = document.getElementById("sidebar-results")!;
+resultsEl.addEventListener("mousedown", (e) => {
+  if (matter.draggedBody) return;
 
-  searchBoxEl.appendChild(inputEl);
-}
-document.body.appendChild(searchBoxEl);
+  const el = e.target! as HTMLElement;
+  const isoEl: HTMLElement | null = el.closest(".sidebar-isotope");
+  if (!isoEl) return;
+  const sym = isoEl.dataset.sym!;
 
-const SIDEBAR_WIDTH = 290;
+  const body = Bodies.rectangle(e.pageX, e.pageY, 100, 60, {
+    restitution: 0.5,
+  });
+  matter.add(body, true);
+  blocks.set(body.id, new Block(sym, 100, 60));
+});
+
+const inputEl = document.getElementById("search-box")! as HTMLInputElement;
+const reprocess = () => {
+  const LIMIT = 50;
+
+  const search = inputEl.value;
+  const searchedElements = fuzzysort.go(search, allElements, {
+    keys: [
+      "sym",
+      (iso) => {
+        const [elem, mass] = iso.sym.split("-");
+        return mass + elem;
+      },
+      (iso) => `${data.elements[iso.protons].name}-${iso.mass}`,
+    ],
+    limit: LIMIT,
+    // slightly nudge the score based on the abundance
+    // so when searching for e.g "Uranium" the common ones go to the top (U-238, U-235)
+    // if not abundance, then how close it is to the "normal" atomic weight
+    scoreFn: (res) =>
+      res.score +
+      res.obj.abundance * 1e-3 +
+      (res.obj.mass - data.elements[res.obj.protons].mass) * 1e-6,
+  });
+
+  const children: (HTMLElement | string)[] = [];
+  if (searchedElements.length > 0) {
+    for (const res of searchedElements) {
+      const iso = res.obj;
+
+      const isoEl = document.createElement("div");
+      isoEl.className = "sidebar-isotope";
+      isoEl.dataset.sym = iso.sym;
+
+      const [element, mass] = iso.sym.split("-");
+
+      isoEl.innerHTML = `
+        <h1>
+          ${element}
+          <span>${mass}</span>
+        </h1>
+        <span>${iso.half_life === null ? "stable" : formatSeconds(iso.half_life)}</span>
+        `;
+
+      const [r, g, b] = getDarkColorForIsotope(iso);
+      isoEl.style.backgroundColor = rgbToHex(r + 128, g + 128, b + 128);
+      isoEl.style.borderColor = rgbToHex(r, g, b);
+
+      children.push(isoEl);
+    }
+
+    if (searchedElements.total > LIMIT) {
+      const msgEl = document.createElement("span");
+      msgEl.textContent = "(Cut off after 50 results)";
+      children.push(msgEl);
+    }
+  } else if (search.length > 0) {
+    const msgEl = document.createElement("span");
+    msgEl.textContent = "No results";
+    children.push(msgEl);
+  }
+
+  resultsEl.replaceChildren(...children);
+};
+inputEl.addEventListener("input", reprocess);
+inputEl.addEventListener("change", reprocess);
+inputEl.value = "poloniu";
+
+dataPromise.then(reprocess);
+
+const SIDEBAR_WIDTH = 300;
 
 export function paint() {
+  canvas.style.pointerEvents = render.mouseX <= sidebarPos ? "none" : "auto";
+
   const HANDLE_WIDTH = 20;
 
   const interaction = render.interactRect(
@@ -79,6 +129,11 @@ export function paint() {
     render.cursor = "pointer";
     if (interaction.state == MouseState.PRESSED) {
       isSidebarOpen = !isSidebarOpen;
+      if (isSidebarOpen) {
+        sidebarEl.classList.add("sidebar-open");
+      } else {
+        sidebarEl.classList.remove("sidebar-open");
+      }
     }
   }
 
@@ -131,27 +186,6 @@ export function paint() {
     }
   }
 
-  {
-    const CARET_SIZE = 6;
-    const caretX =
-        sidebarPos +
-        HANDLE_WIDTH / 2 +
-        (isSidebarOpen ? CARET_SIZE : -CARET_SIZE) / 2,
-      caretY = render.height / 2;
-    ctx.beginPath();
-    ctx.moveTo(caretX, caretY - CARET_SIZE);
-    ctx.lineTo(caretX + (isSidebarOpen ? -CARET_SIZE : CARET_SIZE), caretY);
-    ctx.lineTo(caretX, caretY + CARET_SIZE);
-    ctx.strokeStyle = "#444";
-    ctx.lineWidth = 3;
-    ctx.stroke();
-  }
-
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = "#bbb";
-  ctx.fillStyle = "#ccc";
-  ctx.strokeRect(sidebarPos, 0, HANDLE_WIDTH, render.height);
-  ctx.fillRect(sidebarPos, 0, HANDLE_WIDTH, render.height);
   matter.setLeftWallPos(sidebarPos + HANDLE_WIDTH);
   if (sidebarPos > 0) {
     if (trashOpacity > 0) {
@@ -164,115 +198,19 @@ export function paint() {
     if (trashOpacity < 1) {
       paintNormalSidebar();
     }
-    searchBoxEl.style.opacity = String(1 - trashOpacity);
-
-    ctx.fillStyle = "#ddd";
-    ctx.fillRect(0, 0, sidebarPos, render.height);
+    sidebarContentsEl.style.opacity = String(1 - trashOpacity);
   } else {
-    searchBoxEl.hidden = true;
+    sidebarContentsEl.hidden = true;
   }
 }
 
 function paintNormalSidebar() {
-  if (sidebarPos < SIDEBAR_WIDTH) {
-    ctx.translate(sidebarPos - SIDEBAR_WIDTH, 0);
-
-    // cursed dom search box :)
-    searchBoxEl.style.top = "90px";
-    searchBoxEl.style.left = sidebarPos - SIDEBAR_WIDTH + "px";
-    searchBoxEl.style.width = SIDEBAR_WIDTH + "px";
-  }
-  searchBoxEl.hidden = false;
-
-  ctx.textAlign = "center";
-  ctx.textBaseline = "top";
-  ctx.font = "40px" + render.font;
-  ctx.fillStyle = "#444";
-  ctx.fillText("Elements", SIDEBAR_WIDTH / 2, 20);
-
-  if (searchedElements.length > 0) {
-    let row = 0,
-      col = 0;
-    for (const res of searchedElements) {
-      const ELEMENT_SIZE = 100;
-
-      const xTrans = col * 120 + 35,
-        yTrans = row * 120 + 200;
-      if (yTrans > render.height) break;
-
-      const transform = ctx.getTransform();
-
-      const iso = res.obj;
-
-      const [element, mass] = iso.sym.split("-");
-
-      const interaction = render.interactRect(
-        xTrans,
-        yTrans,
-        ELEMENT_SIZE,
-        ELEMENT_SIZE,
-      );
-      if (interaction?.state === MouseState.PRESSED) {
-        const body = Bodies.rectangle(
-          interaction.mouseX,
-          interaction.mouseY,
-          100,
-          60,
-          {
-            restitution: 0.5,
-          },
-        );
-        matter.add(body, true);
-        blocks.set(body.id, new Block(iso.sym, 100, 60));
-      } else if (interaction) {
-        render.cursor = "pointer";
-      }
-
-      ctx.translate(xTrans, yTrans);
-
-      ctx.textAlign = "left";
-      ctx.textBaseline = "top";
-      ctx.fillStyle = "#444";
-      ctx.font = "40px" + render.font;
-      ctx.fillText(element, 8, 12);
-      ctx.font = "16px" + render.font;
-      ctx.fillText(mass, 10, 53);
-      ctx.font = "12px" + render.font;
-      ctx.textAlign = "right";
-      ctx.fillText(
-        iso.half_life === null ? "stable" : formatSeconds(iso.half_life),
-        94,
-        56,
-      );
-
-      const [r, g, b] = getDarkColorForIsotope(iso);
-      ctx.fillStyle = rgbToHex(r + 128, g + 128, b + 128);
-      ctx.strokeStyle = rgbToHex(r, g, b);
-      ctx.lineWidth = 4;
-      ctx.fillRect(0, 0, ELEMENT_SIZE, ELEMENT_SIZE);
-      ctx.strokeRect(0, 0, ELEMENT_SIZE, ELEMENT_SIZE);
-
-      col++;
-      if (col == 2) {
-        col = 0;
-        row++;
-      }
-
-      ctx.setTransform(transform);
-    }
-  } else if (search.length > 0) {
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    ctx.fillStyle = "#888";
-    ctx.font = "20px" + render.font;
-    ctx.fillText("No results", SIDEBAR_WIDTH / 2, 200);
-  }
-
-  ctx.resetTransform();
+  sidebarEl.style.left = sidebarPos - SIDEBAR_WIDTH + "px";
+  sidebarContentsEl.hidden = false;
 }
 
 function paintTrash() {
-  searchBoxEl.hidden = true;
+  sidebarContentsEl.hidden = true;
 
   ctx.translate(sidebarPos - SIDEBAR_WIDTH / 2, render.height / 2);
 

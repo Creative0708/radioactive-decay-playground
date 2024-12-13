@@ -1,4 +1,4 @@
-export const canvas = document.createElement("canvas");
+export const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 export const ctx: CanvasRenderingContext2D = canvas.getContext("2d")!;
 
 export type ResizeHook = (width: number, height: number) => void;

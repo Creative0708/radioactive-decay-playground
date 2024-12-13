@@ -9,9 +9,10 @@ import typescript from "@rollup/plugin-typescript";
 import commonjs from "@rollup/plugin-commonjs";
 import json from "@rollup/plugin-json";
 import terser from "@rollup/plugin-terser";
+import fs from "node:fs";
 
 // Modified from https://github.com/rollup/plugins/blob/master/packages/html/src/index.ts
-function template({ attributes, files, meta, publicPath, title }) {
+const template = ({ attributes, files, meta, publicPath, title }) => {
   function makeHtmlAttributes(attributes) {
     if (!attributes) {
       return "";
@@ -35,21 +36,15 @@ function template({ attributes, files, meta, publicPath, title }) {
       return `<meta${attrs}>`;
     })
     .join("\n");
-  return `
-<!doctype html>
-<html${makeHtmlAttributes(attributes.html)}>
-  <head>
-    ${metas}
-    <title>${title}</title>
-    <link rel="stylesheet" href="/pub/index.css">
-  </head>
-  <body class="nojs">
-    <noscript>JavaScript is required for this interactive experience. Sorry!</noscript>
-    ${scripts}
-  </body>
-</html>
-`;
-}
+
+  const templatePath = path.resolve("index.html");
+  const fileContents = fs.readFileSync(templatePath).toString("utf8");
+  return fileContents
+    .replace("{htmlattr}", makeHtmlAttributes(attributes.html))
+    .replace("{metas}", metas)
+    .replace("{title}", title)
+    .replace("{scripts}", scripts);
+};
 
 // https://github.com/rollup/rollup/issues/3414#issuecomment-751699335
 const watcher = (globs) => ({
@@ -72,7 +67,7 @@ export default {
     sourcemap: !is_prod,
   },
   plugins: [
-    !is_prod && watcher(["pub/**"]),
+    !is_prod && watcher(["pub/**", "index.html"]),
     nodeResolve(),
     commonjs(),
     json(),

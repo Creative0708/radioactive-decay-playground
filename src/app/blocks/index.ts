@@ -69,9 +69,9 @@ export function paint() {
     );
     // bottom
     ctx.fillRect(
-      0,
+      matter.leftWallPos,
       render.height - matter.WALL_INSET,
-      render.width,
+      render.width - matter.leftWallPos,
       matter.WALL_INSET,
     );
   }
