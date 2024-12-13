@@ -1,12 +1,12 @@
-import { Body, Composite, Engine, Query } from "matter-js";
-import * as matter from "../matter";
-import { ctx } from "../canvas";
-import { MouseState, render } from ".";
-import { Block, blocks } from "../block";
-import { getDarkColorForIsotope, rgbToHex } from "../util";
-import data from "../data";
+import { Body, Query } from "matter-js";
+import * as matter from "../../matter";
+import { ctx } from "../../canvas";
+import { render } from "..";
+import { Block, blocks } from "../../block";
+import { getDarkColorForIsotope, rgbToHex } from "../../util";
+import data from "../../data";
 
-enum BlockState {
+enum BlockMouseState {
   NONE,
   HOVERED,
   DRAGGED,
@@ -34,14 +34,16 @@ export function paint() {
     const ROUNDING_CONSTANT = 512 / Math.PI;
     ctx.rotate(Math.round(body.angle * ROUNDING_CONSTANT) / ROUNDING_CONSTANT);
 
-    paintBlock(
-      block,
+    const blockState =
       body === matter.draggedBody
-        ? BlockState.DRAGGED
+        ? BlockMouseState.DRAGGED
         : body === hoveredBody
-          ? BlockState.HOVERED
-          : BlockState.NONE,
-    );
+          ? BlockMouseState.HOVERED
+          : BlockMouseState.NONE;
+
+    paintBlock(block, blockState);
+    if (blockState === BlockMouseState.HOVERED) {
+    }
 
     ctx.resetTransform();
 
@@ -77,9 +79,9 @@ export function paint() {
   matter.tick(render.delta);
 }
 
-function paintBlock(block: Block, state: BlockState) {
+function paintBlock(block: Block, blockState: BlockMouseState) {
   // also used for if this is being painted back-to-front
-  const isDragged = state === BlockState.DRAGGED;
+  const isDragged = blockState === BlockMouseState.DRAGGED;
   if (!isDragged) {
     block.tick(render.delta);
   }
@@ -87,15 +89,15 @@ function paintBlock(block: Block, state: BlockState) {
   const { width, height } = block;
 
   // element with the maximum composition
-  const [approxSym, approxPortion] = Object.entries(block.composition).reduce(
-    (a, b) => (a[1] > b[1] ? a : b),
-  );
+  const [approxSym, approxPortion] = Object.entries(
+    block.composition.isotopes,
+  ).reduce((a, b) => (a[1] > b[1] ? a : b));
 
   const drawBackground = () => {
     const transform = ctx.getTransform();
     ctx.translate(-width / 2, -height / 2);
 
-    const [r, g, b] = getDarkColorForIsotope(data.isotopes[approxSym]);
+    const [r, g, b] = getDarkColorForIsotope(approxSym);
     ctx.strokeStyle = rgbToHex(r, g, b);
 
     if (!isDragged) {
@@ -103,14 +105,14 @@ function paintBlock(block: Block, state: BlockState) {
       ctx.strokeRect(0, 0, width, height);
     }
 
-    const backgroundColorBump = state === BlockState.HOVERED ? 150 : 128;
+    const backgroundColorBump =
+      blockState === BlockMouseState.HOVERED ? 150 : 128;
 
     let portion = 0;
-    for (const sym in block.composition) {
-      const widthOfSym = block.composition[sym] * width;
-      const isotope = data.isotopes[sym];
+    for (const sym in block.composition.isotopes) {
+      const widthOfSym = block.composition.isotopes[sym] * width;
 
-      const [r, g, b] = getDarkColorForIsotope(isotope);
+      const [r, g, b] = getDarkColorForIsotope(sym);
       ctx.fillStyle = rgbToHex(
         r + backgroundColorBump,
         g + backgroundColorBump,

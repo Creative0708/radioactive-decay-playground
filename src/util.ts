@@ -1,4 +1,4 @@
-import data, { Isotope, PElement } from "./data";
+import data, { Isotope, PElement, Sym } from "./data";
 
 export function rgbToHex(r: number, g: number, b: number): string {
   function component(num: number): string {
@@ -7,11 +7,15 @@ export function rgbToHex(r: number, g: number, b: number): string {
   return `#${component(r)}${component(g)}${component(b)}`;
 }
 export function getDarkColorForIsotope(
-  isotope: Isotope | null | undefined,
+  iso: Isotope | Sym | undefined,
 ): [number, number, number] {
-  if (!isotope) return [80, 80, 80];
+  const protons =
+    typeof iso === "string"
+      ? data.elementSymbolMap[iso.split("-")[0]]
+      : iso?.protons;
+  if (protons == null) return [80, 80, 80];
 
-  const element = data.elements[isotope.protons];
+  const element = data.elements[protons];
   const hex = element.cpkHexColor;
 
   return [hex >> 17, (hex >> 9) & 0x7f, (hex >> 1) & 0x7f];

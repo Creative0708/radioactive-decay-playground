@@ -3,6 +3,9 @@ import { canvas, ctx } from "../canvas";
 
 import * as blocks from "./blocks";
 import * as sidebar from "./sidebar";
+import * as timeshift from "./timeshift";
+import * as tooltip from "./tooltip";
+
 import * as matter from "../matter";
 
 let lastFrameTime: null | number = null;
@@ -17,8 +20,8 @@ export const paint = (frameTime: number) => {
     render.height = canvas.height;
     render.delta = (frameTime - lastFrameTime) / 1000;
 
-    render.mouseX = globalMouseX;
-    render.mouseY = globalMouseY;
+    render.mouseX = render.rawMouseX = globalMouseX;
+    render.mouseY = render.rawMouseY = globalMouseY;
 
     render.mouseState = globalMouseState;
     if (globalMouseState === MouseState.PRESSED)
@@ -33,8 +36,10 @@ export const paint = (frameTime: number) => {
 
   ctx.globalCompositeOperation = "destination-over";
 
+  timeshift.paint();
   sidebar.paint();
   blocks.paint();
+  tooltip.paint();
 
   if (matter.draggedBody) {
     canvas.style.cursor = "grabbing";

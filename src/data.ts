@@ -44,33 +44,43 @@ export interface PElement {
 
 export interface Data {
   elements: PElement[];
+  elementSymbolMap: { [elem: string]: number };
   isotopes: {
-    [elem: Sym]: Isotope;
+    [iso: Sym]: Isotope;
   };
 }
 
 // dummy data until data loads
 let data: Data = {
   elements: [],
+  elementSymbolMap: {},
   isotopes: {},
 };
 export default data;
 
 export let allElements: Isotope[] = [];
 
-addEventListener("load", () => {
-  fetch("/pub/data.json")
-    .then((resp) => resp.json())
-    .then((newData) => {
-      Object.assign(data, newData);
-      allElements = [...Object.values(data.isotopes)];
+export const dataPromise = (async () => {
+  await new Promise((res) => addEventListener("load", res, { once: true }));
 
-      // @ts-ignore
-      window.allElements = allElements;
-      // @ts-ignore
-      window.data = data;
-    });
-});
+  const request = await fetch("/pub/data.json");
+  const newData = await request.json();
+
+  Object.assign(data, newData);
+
+  for (let i = 0; i < data.elements.length; i++) {
+    const element = data.elements[i];
+    if (!element) continue;
+    data.elementSymbolMap[element.symbol] = i;
+  }
+
+  allElements = [...Object.values(data.isotopes)];
+
+  // @ts-ignore
+  window.allElements = allElements;
+  // @ts-ignore
+  window.data = data;
+})();
 
 // utility functions
 

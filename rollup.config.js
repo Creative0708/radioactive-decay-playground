@@ -8,6 +8,7 @@ import path from "path";
 import typescript from "@rollup/plugin-typescript";
 import commonjs from "@rollup/plugin-commonjs";
 import json from "@rollup/plugin-json";
+import terser from "@rollup/plugin-terser";
 
 // Modified from https://github.com/rollup/plugins/blob/master/packages/html/src/index.ts
 function template({ attributes, files, meta, publicPath, title }) {
@@ -71,7 +72,7 @@ export default {
     sourcemap: !is_prod,
   },
   plugins: [
-    watcher(["pub/**"]),
+    !is_prod && watcher(["pub/**"]),
     nodeResolve(),
     commonjs(),
     json(),
@@ -93,7 +94,10 @@ export default {
         { src: "scripts/dist/data.json", dest: "dist/pub" },
       ],
     }),
-    livereload(),
-    serve("dist"),
+
+    is_prod && terser(),
+
+    !is_prod && livereload(),
+    !is_prod && serve("dist"),
   ],
 };

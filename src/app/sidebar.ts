@@ -2,7 +2,7 @@ import * as fuzzysort from "fuzzysort";
 import { MouseState, render } from ".";
 import { ctx } from "../canvas";
 import { lerp } from "../math";
-import data, { allElements, Isotope } from "../data";
+import data, { allElements, dataPromise, Isotope } from "../data";
 import * as matter from "../matter";
 import { Bodies, Body, Composite } from "matter-js";
 import { Block, blocks } from "../block";
@@ -56,8 +56,9 @@ let search = "";
   };
   inputEl.addEventListener("input", reprocess);
   inputEl.addEventListener("change", reprocess);
-  inputEl.value = "rn";
-  setTimeout(() => reprocess(), 200);
+  inputEl.value = "poloniu";
+
+  dataPromise.then(reprocess);
 
   searchBoxEl.appendChild(inputEl);
 }

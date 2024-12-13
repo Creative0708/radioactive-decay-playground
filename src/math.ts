@@ -1,5 +1,7 @@
 import { render } from "./app";
 
+export const TAU = Math.PI * 2;
+
 export function lerp(
   from: number,
   to: number,

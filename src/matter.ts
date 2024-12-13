@@ -2,16 +2,13 @@ import {
   Bodies,
   Body,
   Composite,
-  Composites,
   Engine,
   Events,
   Mouse,
   MouseConstraint,
-  Vector,
-  Vertices,
-  World,
 } from "matter-js";
 import { addResizeHook, canvas } from "./canvas";
+import { TAU } from "./math";
 
 export const engine = Engine.create();
 engine.gravity.y = 2;
@@ -46,7 +43,7 @@ Composite.add(world, mouseConstraint);
 
 const WALL_WIDTH = 500;
 export const WALL_INSET = 10;
-const TOP_WALL_POS = -1000;
+const TOP_WALL_POS = -300;
 
 function wallBody() {
   return Body.create({
@@ -62,7 +59,6 @@ function wallBody() {
 
 export const leftWall = wallBody();
 export const rightWall = wallBody();
-export const topWall = wallBody();
 export const bottomWall = wallBody();
 
 // hack to make sidebar work
@@ -113,7 +109,12 @@ function setAxisAlignedVertices(
   ]);
 }
 
+let canvasWidth = 0,
+  canvasHeight = 0;
 addResizeHook((width, height) => {
+  canvasWidth = width;
+  canvasHeight = height;
+
   setAxisAlignedVertices(
     leftWall,
     WALL_INSET - WALL_WIDTH,
@@ -129,13 +130,6 @@ addResizeHook((width, height) => {
     height + WALL_WIDTH,
   );
   setAxisAlignedVertices(
-    topWall,
-    -WALL_WIDTH,
-    TOP_WALL_POS - WALL_WIDTH,
-    width + WALL_WIDTH,
-    TOP_WALL_POS,
-  );
-  setAxisAlignedVertices(
     bottomWall,
     -WALL_WIDTH,
     height - WALL_INSET,
@@ -144,20 +138,60 @@ addResizeHook((width, height) => {
   );
 });
 
-add([leftWall, rightWall, topWall, bottomWall]);
+add([leftWall, rightWall, bottomWall]);
 
 export let draggedBody: null | Body = null;
 
+export let time: number = 0;
+
+let lastX = 0,
+  lastY = 0;
 export function tick(delta: number) {
+  time += delta;
+
   if (draggedBody && Math.abs(draggedBody.angle) > 0.01) {
     draggedBody.angle =
-      draggedBody.angle - Math.round(draggedBody.angle / Math.PI) * Math.PI;
+      draggedBody.angle - Math.round(draggedBody.angle / TAU) * TAU;
     Body.setAngularVelocity(draggedBody, -draggedBody.angle * 0.2);
   }
 
-  Engine.update(engine, delta * 1000);
+  const newX = screenX * 0.4,
+    newY = screenY * 0.4;
 
-  for (const wall of [leftWall, rightWall, topWall, bottomWall]) {
+  const winDeltaX = lastX - newX,
+    winDeltaY = lastY - newY;
+
+  for (const body of world.bodies) {
+    if (body.isStatic) {
+      if (winDeltaX || winDeltaY)
+        Body.setVelocity(body, { x: -winDeltaX, y: -winDeltaY });
+    } else {
+      let deltaX = winDeltaX,
+        deltaY = winDeltaY;
+      let stopVelocity = false;
+      const POSITION_LIMIT = 20;
+      if (body.position.x < -POSITION_LIMIT) {
+        deltaX += -POSITION_LIMIT - body.position.x;
+        stopVelocity = true;
+      } else if (body.position.x > canvasWidth + POSITION_LIMIT) {
+        deltaX += canvasWidth + POSITION_LIMIT - body.position.x;
+        stopVelocity = true;
+      }
+      if (body.position.y > canvasHeight + POSITION_LIMIT) {
+        deltaY += canvasHeight + POSITION_LIMIT - body.position.y;
+        stopVelocity = true;
+      }
+      if (deltaX || deltaY) Body.translate(body, { x: deltaX, y: deltaY });
+      if (stopVelocity) Body.setVelocity(body, { x: 0, y: 0 });
+    }
+  }
+
+  lastX = newX;
+  lastY = newY;
+
+  Engine.update(engine, Math.min(delta * 1000, 50));
+
+  for (const wall of [leftWall, rightWall, bottomWall]) {
     if (wall.velocity.x || wall.velocity.y) {
       Body.setVelocity(wall, { x: 0, y: 0 });
     }

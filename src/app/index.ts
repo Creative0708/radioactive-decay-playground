@@ -8,6 +8,9 @@ export interface RenderCtx {
 
   cursor: string | null;
 
+  rawMouseX: number;
+  rawMouseY: number;
+
   mouseX: number;
   mouseY: number;
   mouseState: MouseState;
@@ -41,6 +44,9 @@ export let render: RenderCtx = {
   delta: 0,
 
   cursor: null,
+
+  rawMouseX: NaN,
+  rawMouseY: NaN,
 
   mouseX: NaN,
   mouseY: NaN,
