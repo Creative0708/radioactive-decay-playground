@@ -6,10 +6,9 @@
         <link rel="stylesheet" href="/pub/index.css" />
     </head>
     <body class="nojs">
-        <noscript
-            >JavaScript is required for this interactive experience.
-            Sorry!</noscript
-        >
+        <noscript>
+            JavaScript is required for this interactive experience. Sorry!
+        </noscript>
         <div class="container">
             <div>
                 <div id="sidebar-container">
@@ -32,7 +31,12 @@
                 <p>Time scaling</p>
                 <input id="timeshift-slider" />
                 <label for="timeshift-slider"></label>
+                <div id="timeshift-time">
+                    Time elapsed:
+                    <span id="timeshift-timeval"></span>
+                </div>
             </div>
+            <div id="tooltip"></div>
         </div>
         {scripts}
     </body>

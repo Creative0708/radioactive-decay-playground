@@ -1,9 +1,11 @@
 import { render } from ".";
-import { setTimescale, timescale } from "../block";
+import { setUniverseTime, universeTime } from "../block";
 import { ctx } from "../canvas";
 import { TAU } from "../math";
 import * as matter from "../matter";
-import { rgbToHex } from "../util";
+import { formatSeconds, rgbToHex } from "../util";
+
+export let timescale = 1;
 
 interface Timeshift {
   scale: number;
@@ -58,15 +60,15 @@ let clockFillStyle = "";
 const inputUpdate = () => {
   val = +sliderEl.value;
 
-  const timescale = TIMESHIFTS[val];
+  const currTimescale = TIMESHIFTS[val];
 
-  labelEl.innerHTML = `1s = ${timescale.display}`;
-  setTimescale(timescale.scale);
+  labelEl.innerHTML = `1s = ${currTimescale.display}`;
+  timescale = currTimescale.scale;
 
   // cosmetic changes
   const centered_val = val - SECOND_OFFSET;
 
-  matter.engine.timing.timeScale = 1 / (1 - centered_val * 0.03);
+  matter.engine.timing.timeScale = 1 / (1 - centered_val * 0.01);
 
   const BASELINE = 0x44;
   const r = BASELINE - Math.min(centered_val, 0) * 14,
@@ -78,7 +80,10 @@ const inputUpdate = () => {
 sliderEl.addEventListener("input", inputUpdate);
 inputUpdate();
 
+const timeEl = document.getElementById("timeshift-timeval")!;
+
 let seconds = 0;
+
 export const paint = () => {
   // little clock icon
   ctx.translate(render.width - 100, 170);
@@ -97,7 +102,8 @@ export const paint = () => {
     ]) {
       ctx.rotate(
         // the +(timescale > multiplier && Math.random()) part makes it look better ok
-        (seconds / multiplier + +(timescale > multiplier && Math.random())) *
+        (seconds / multiplier +
+          +(timescale >= multiplier * 60 && Math.random())) *
           TAU,
       );
       ctx.beginPath();
@@ -118,8 +124,11 @@ export const paint = () => {
   ctx.resetTransform();
 
   seconds += timescale * render.delta;
+  setUniverseTime(universeTime + timescale * render.delta);
   const TWELVE_HOURS = 60 * 60 * 12;
   if (seconds >= TWELVE_HOURS) {
     seconds %= TWELVE_HOURS;
   }
+
+  timeEl.innerHTML = formatSeconds(universeTime, 3).html;
 };

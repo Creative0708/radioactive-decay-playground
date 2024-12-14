@@ -1,5 +1,5 @@
 import { World } from "matter-js";
-import { blocks } from "../../block";
+import { blocks, setUniverseTime } from "../../block";
 import { world } from "../../matter";
 
 const extraOptionsEl = document.getElementById("extra-options")!;
@@ -13,9 +13,8 @@ const extraButton = (name: string, handler: (el: HTMLElement) => void) => {
 };
 
 let clearAllTimeout: null | number = null;
-extraButton("Clear all", (el) => {
-  // using textContent as a sorta state machine
-  if (el.textContent === "Are you sure?") {
+extraButton("Clear all and reset", (el) => {
+  if (el.dataset.areYouSure) {
     window.clearTimeout(clearAllTimeout!);
 
     blocks.clear();
@@ -24,11 +23,16 @@ extraButton("Clear all", (el) => {
       world.bodies.filter((body) => !body.isStatic),
     );
 
-    el.textContent = "Clear all";
+    el.textContent = "Clear all and reset";
+    el.dataset.areYouSure = "";
+
+    setUniverseTime(0);
   } else {
     el.textContent = "Are you sure?";
+    el.dataset.areYouSure = "1";
     clearAllTimeout = window.setTimeout(() => {
-      el.textContent = "Clear all";
+      el.textContent = "Clear all and reset";
+      el.dataset.areYouSure = "";
     }, 3000);
   }
 });

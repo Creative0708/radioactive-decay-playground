@@ -145,6 +145,12 @@ addResizeHook((width, height) => {
 add([leftWall, rightWall, bottomWall]);
 
 export let draggedBody: null | Body = null;
+export function setDraggedBody(body: null | Body) {
+  if (draggedBody && !body) {
+    mouse.button = -1;
+  }
+  draggedBody = body;
+}
 
 export let time: number = 0;
 
@@ -172,21 +178,20 @@ export function tick(delta: number) {
     } else {
       let deltaX = winDeltaX,
         deltaY = winDeltaY;
-      let stopVelocity = false;
       const POSITION_LIMIT = 20;
       if (body.position.x < -POSITION_LIMIT) {
         deltaX += -POSITION_LIMIT - body.position.x;
-        stopVelocity = true;
       } else if (body.position.x > canvasWidth + POSITION_LIMIT) {
         deltaX += canvasWidth + POSITION_LIMIT - body.position.x;
-        stopVelocity = true;
       }
-      if (body.position.y > canvasHeight + POSITION_LIMIT) {
+      const CEILING_POS = -1000;
+      if (body.position.y < CEILING_POS) {
+        Body.setVelocity(body, { x: body.velocity.x, y: 20 });
+        deltaY += CEILING_POS - body.position.y;
+      } else if (body.position.y > canvasHeight + POSITION_LIMIT) {
         deltaY += canvasHeight + POSITION_LIMIT - body.position.y;
-        stopVelocity = true;
       }
       if (deltaX || deltaY) Body.translate(body, { x: deltaX, y: deltaY });
-      if (stopVelocity) Body.setVelocity(body, { x: 0, y: 0 });
     }
   }
 

@@ -2,7 +2,7 @@ import * as fuzzysort from "fuzzysort";
 import { MouseState, render } from ".";
 import { canvas, ctx } from "../canvas";
 import { lerp } from "../math";
-import data, { allElements, dataPromise, Isotope } from "../data";
+import data, { allElements, dataPromise, Isotope, Sym } from "../data";
 import * as matter from "../matter";
 import { Bodies } from "matter-js";
 import { Block, blocks } from "../block";
@@ -13,6 +13,7 @@ import {
 } from "../util";
 
 import "./sidebar/extra_options";
+import { showTooltip } from "./tooltip";
 
 let sidebarPos = 0;
 let isSidebarOpen = true;
@@ -36,6 +37,7 @@ resultsEl.addEventListener("mousedown", (e) => {
   const el = e.target! as HTMLElement;
   const isoEl: HTMLElement | null = el.closest(".sidebar-isotope");
   if (!isoEl) return;
+
   const sym = isoEl.dataset.sym!;
 
   const body = Bodies.rectangle(e.pageX, e.pageY, 100, 60, {
@@ -43,6 +45,20 @@ resultsEl.addEventListener("mousedown", (e) => {
   });
   matter.add(body, true);
   blocks.set(body.id, new Block(sym, 100, 60));
+});
+
+let hoveredSym: Sym | null = null;
+document.body.addEventListener("mousemove", (e) => {
+  hoveredSym = null;
+  if (matter.draggedBody) return;
+
+  const el = e.target! as HTMLElement;
+  const isoEl: HTMLElement | null = el.closest(".sidebar-isotope");
+  if (!isoEl) return;
+
+  const sym = isoEl.dataset.sym!;
+
+  hoveredSym = sym;
 });
 
 const inputEl = document.getElementById("search-box")! as HTMLInputElement;
@@ -85,7 +101,7 @@ const reprocess = () => {
           ${element}
           <span>${mass}</span>
         </h1>
-        <span>${iso.half_life === null ? "stable" : formatSeconds(iso.half_life)}</span>
+        <span>${iso.half_life === null ? "stable" : formatSeconds(iso.half_life).html}</span>
         `;
 
       const [r, g, b] = getDarkColorForIsotope(iso);
@@ -110,6 +126,9 @@ const reprocess = () => {
 };
 inputEl.addEventListener("input", reprocess);
 inputEl.addEventListener("change", reprocess);
+
+// inputEl.value = "polon";
+// dataPromise.then(reprocess);
 
 const SIDEBAR_WIDTH = 300;
 
@@ -186,7 +205,9 @@ export function paint() {
   }
 
   matter.setLeftWallPos(sidebarPos + HANDLE_WIDTH);
+  sidebarEl.style.left = sidebarPos - SIDEBAR_WIDTH + "px";
   if (sidebarPos > 0) {
+    sidebarContentsEl.hidden = false;
     if (trashOpacity > 0) {
       ctx.globalAlpha = trashOpacity;
       paintTrash();
@@ -194,22 +215,29 @@ export function paint() {
       ctx.fillRect(0, 0, sidebarPos - 4, render.height);
       ctx.globalAlpha = 1;
     }
-    if (trashOpacity < 1) {
-      paintNormalSidebar();
-    }
   } else {
     sidebarContentsEl.hidden = true;
   }
-}
 
-function paintNormalSidebar() {
-  sidebarEl.style.left = sidebarPos - SIDEBAR_WIDTH + "px";
-  sidebarContentsEl.hidden = false;
+  if (hoveredSym) {
+    const sym = hoveredSym;
+
+    const iso = data.isotopes[sym];
+    const elem = data.elements[iso.protons];
+
+    showTooltip("element", (data: { iso: Isotope } | null, outer) => {
+      outer.innerHTML = `
+          <h1>${elem.name}-${iso.mass} <span class="weak">${sym}, <sup>${iso.mass}</sup>${elem.symbol}</span></h1>
+
+          ${iso.half_life === null ? "Stable" : "Half-life: " + formatSeconds(iso.half_life, 4).html}
+          `;
+
+      return { iso };
+    });
+  }
 }
 
 function paintTrash() {
-  sidebarContentsEl.hidden = true;
-
   ctx.translate(sidebarPos - SIDEBAR_WIDTH / 2, render.height / 2);
 
   ctx.fillStyle = "#444";

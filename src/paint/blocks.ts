@@ -3,8 +3,11 @@ import * as matter from "../matter";
 import { ctx } from "../canvas";
 import { render } from ".";
 import { Block, blocks } from "../block";
-import { getDarkColorForIsotope, rgbToHex } from "../util";
-import data from "../data";
+import { formatSeconds, getDarkColorForIsotope, rgbToHex } from "../util";
+import { showTooltip } from "./tooltip";
+import * as Plot from "@observablehq/plot";
+import { Sym } from "../data";
+import { timescale } from "./timeshift";
 
 enum BlockMouseState {
   NONE,
@@ -12,8 +15,12 @@ enum BlockMouseState {
   DRAGGED,
 }
 
+const APPROXIMATE_THRESHOLD = 0.7;
+
 export function paint() {
   const bodies = matter.world.bodies;
+
+  if (matter.draggedBody) render.cursor = "grabbing";
 
   let hoveredBody: null | Body = null;
   if (!matter.draggedBody && isFinite(render.mouseX)) {
@@ -21,6 +28,106 @@ export function paint() {
       x: render.mouseX,
       y: render.mouseY,
     })[0];
+  }
+  if (hoveredBody?.isStatic) hoveredBody = null;
+
+  if (hoveredBody) {
+    render.cursor = "pointer";
+
+    const block = blocks.get(hoveredBody.id)!;
+
+    showTooltip("block", (data: { id: number } | null, el) => {
+      const isNew = data?.id !== hoveredBody.id;
+
+      if (!isNew && block.isStable) return null;
+
+      let headingEl: HTMLElement;
+      if (isNew) {
+        el.replaceChildren();
+
+        headingEl = document.createElement("h1");
+        el.appendChild(headingEl);
+      } else {
+        headingEl = el.querySelector("h1")!;
+      }
+
+      const [approxSym, approxPortion] = block.approximate();
+
+      let now: null | Sym =
+        approxPortion >= APPROXIMATE_THRESHOLD ? approxSym : null;
+
+      headingEl.innerHTML =
+        (now ? `Block of ${now}` : `Block of various isotopes`) +
+        (now === block.originalSym
+          ? ""
+          : ` <span class="weak">(originally ${block.originalSym})</span>`);
+
+      if (block.history.length === 1 && block.isStable) {
+        const pEl = document.createElement("p");
+        pEl.textContent = "Block is stable. ";
+        el.appendChild(pEl);
+      } else {
+        const width = 480,
+          height = 300;
+
+        const plotData: {
+          sym: Sym;
+          time: number;
+          percentage: number;
+        }[] = [];
+
+        const { multiplier, unit } = formatSeconds(block.lifetime);
+
+        for (const { time, isotopes } of block.history) {
+          for (const [sym, portion] of Object.entries(isotopes)) {
+            plotData.push({
+              sym,
+              time: time * multiplier,
+              percentage: portion * 100,
+            });
+          }
+        }
+        const colors: string[] = [];
+        const allIsotopes = [...block.allIsotopes];
+        allIsotopes.sort();
+        for (const sym of allIsotopes) {
+          const [r, g, b] = getDarkColorForIsotope(sym);
+          colors.push(rgbToHex(r * 2, g * 2, b * 2));
+        }
+
+        const plot = Plot.plot({
+          marks: [
+            Plot.line(plotData, {
+              x: { value: "time", label: `time (${unit})` },
+              y: { value: "percentage" },
+              z: "sym",
+              stroke: "sym",
+            }),
+          ],
+          y: { domain: [0, 100] },
+          color: {
+            type: "categorical",
+            range: colors,
+          },
+        });
+        plot.style.width = width + "px";
+        plot.style.height = height + "px";
+        plot.classList.add("plot");
+
+        const legend = plot.legend("color")!;
+        legend.classList.add("legend");
+
+        if (isNew) {
+          el.appendChild(plot);
+          el.appendChild(legend);
+        } else {
+          el.replaceChild(plot, el.querySelector(".plot")!);
+          el.replaceChild(legend, el.querySelector(".legend")!);
+        }
+      }
+
+      return isNew ? { id: hoveredBody.id } : null;
+    });
   }
 
   ctx.textAlign = "center";
@@ -42,9 +149,6 @@ export function paint() {
           : BlockMouseState.NONE;
 
     paintBlock(block, blockState);
-    if (blockState === BlockMouseState.HOVERED) {
-      render.cursor = "pointer";
-    }
 
     ctx.resetTransform();
 
@@ -80,19 +184,22 @@ export function paint() {
   matter.tick(render.delta);
 }
 
+const STEPS = 16;
+
 function paintBlock(block: Block, blockState: BlockMouseState) {
   // also used for if this is being painted back-to-front
   const isDragged = blockState === BlockMouseState.DRAGGED;
-  if (!isDragged) {
-    block.tick(render.delta);
+  if (!isDragged && !block.isStable) {
+    const delta = (render.delta * timescale) / STEPS;
+    for (let i = 0; i < STEPS; i++) {
+      block.tick(delta);
+    }
+    block.saveHistory();
   }
 
   const { width, height } = block;
 
-  // element with the maximum composition
-  const [approxSym, approxPortion] = Object.entries(
-    block.composition.isotopes,
-  ).reduce((a, b) => (a[1] > b[1] ? a : b));
+  const [approxSym, approxPortion] = block.approximate();
 
   const drawBackground = () => {
     const transform = ctx.getTransform();
@@ -110,8 +217,8 @@ function paintBlock(block: Block, blockState: BlockMouseState) {
       blockState === BlockMouseState.HOVERED ? 150 : 128;
 
     let portion = 0;
-    for (const sym in block.composition.isotopes) {
-      const widthOfSym = block.composition.isotopes[sym] * width;
+    for (const sym in block.composition) {
+      const widthOfSym = block.composition[sym] * width;
 
       const [r, g, b] = getDarkColorForIsotope(sym);
       ctx.fillStyle = rgbToHex(
@@ -143,7 +250,7 @@ function paintBlock(block: Block, blockState: BlockMouseState) {
 
   {
     ctx.fillStyle = "#444";
-    if (approxPortion > 0.7) {
+    if (approxPortion >= APPROXIMATE_THRESHOLD) {
       const [sym, mass] = approxSym.split("-");
 
       ctx.font = "30px" + render.font;

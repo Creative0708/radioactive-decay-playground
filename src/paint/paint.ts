@@ -5,6 +5,7 @@ import * as blocks from "./blocks";
 import * as sidebar from "./sidebar";
 import * as timeshift from "./timeshift";
 import * as tooltip from "./tooltip";
+import * as particles from "./particles";
 
 import * as matter from "../matter";
 
@@ -23,9 +24,10 @@ export const paint = (frameTime: number) => {
     render.mouseX = render.rawMouseX = globalMouseX;
     render.mouseY = render.rawMouseY = globalMouseY;
 
-    render.mouseState = globalMouseState;
+    render.mouseState = matter.draggedBody ? MouseState.NONE : globalMouseState;
     if (globalMouseState === MouseState.PRESSED)
       globalMouseState = MouseState.DOWN;
+    else if (globalMouseState === MouseState.NONE) matter.setDraggedBody(null);
 
     render.cursor = null;
 
@@ -38,14 +40,12 @@ export const paint = (frameTime: number) => {
 
   timeshift.paint();
   sidebar.paint();
+  particles.paint();
   blocks.paint();
+
   tooltip.paint();
 
-  if (matter.draggedBody) {
-    document.body.style.cursor = "grabbing";
-  } else {
-    document.body.style.cursor = render.cursor ?? "auto";
-  }
+  document.body.style.cursor = render.cursor ?? "auto";
 };
 
 let globalMouseX = 0,

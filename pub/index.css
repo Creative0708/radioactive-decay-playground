@@ -16,6 +16,12 @@ body.nojs {
     }
 }
 
+h1,
+h2,
+h3 {
+    font-weight: normal;
+}
+
 #sidebar-container {
     position: absolute;
     top: 0;
@@ -34,11 +40,8 @@ body.nojs {
     padding: 16px 32px 0;
     box-sizing: border-box;
 
-    z-index: 0;
-
     > h1 {
         font-size: 3em;
-        font-weight: normal;
         color: #444;
 
         margin-block: 0.5em;
@@ -69,7 +72,10 @@ body.nojs {
 }
 
 #sidebar-results {
+    flex-grow: 1;
+
     display: inline-grid;
+    align-content: start;
     grid-template-columns: 100px 100px;
     gap: 16px;
     margin-top: 2em;
@@ -81,6 +87,7 @@ body.nojs {
     > span {
         grid-column: span 2;
         text-align: center;
+        color: #666;
     }
 }
 .sidebar-isotope {
@@ -92,14 +99,10 @@ body.nojs {
 
     cursor: pointer;
 
-    > * {
-        display: inline-block;
-
-        font-weight: normal;
-        margin: 0;
-        pointer-events: none;
-    }
+    margin: 0;
     > h1 {
+        font-size: 1.7em;
+        margin: 0;
         > span {
             font-size: 1rem;
             margin-left: auto;
@@ -157,12 +160,42 @@ button:hover {
         position: absolute;
         bottom: -1.5em;
     }
+
+    #timeshift-time {
+        position: absolute;
+        width: 128px;
+        top: 0;
+        left: -128px;
+        text-align: right;
+        line-height: 1.5;
+    }
 }
 
-.search-box > p,
-.time-container > p {
-    margin-block: 0 0.7em;
-    color: #444;
+#tooltip {
+    position: absolute;
+    margin: 8px;
+
+    background: #eee;
+    border: 2px solid #444;
+
+    padding: 1em;
+
+    box-sizing: border-box;
+
+    transition: opacity 0.2s;
+
+    h1 {
+        font-size: 1.5em;
+    }
+
+    :first-child {
+        margin-block-start: 0;
+    }
+}
+
+.weak {
+    opacity: 0.5;
+    font-size: 1rem;
 }
 
 [hidden] {
