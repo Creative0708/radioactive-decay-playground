@@ -3,7 +3,12 @@ import * as matter from "../matter";
 import { ctx } from "../canvas";
 import { render } from ".";
 import { Block, blocks } from "../block";
-import { formatSeconds, getDarkColorForIsotope, rgbToHex } from "../util";
+import {
+  formatSeconds,
+  getDarkColorForIsotope,
+  getFullNameForIsotope,
+  rgbToHex,
+} from "../util";
 import { showTooltip } from "./tooltip";
 import * as Plot from "@observablehq/plot";
 import { Sym } from "../data";
@@ -57,14 +62,16 @@ export function paint() {
         approxPortion >= APPROXIMATE_THRESHOLD ? approxSym : null;
 
       headingEl.innerHTML =
-        (now ? `Block of ${now}` : `Block of various isotopes`) +
+        (now
+          ? `Block of ${getFullNameForIsotope(now)}`
+          : `Block of various isotopes`) +
         (now === block.originalSym
           ? ""
           : ` <span class="weak">(originally ${block.originalSym})</span>`);
 
       if (block.history.length === 1 && block.isStable) {
         const pEl = document.createElement("p");
-        pEl.textContent = "Block is stable. ";
+        pEl.textContent = `${block.originalSym} is stable and won't decay.`;
         el.appendChild(pEl);
       } else {
         const width = 480,
@@ -76,7 +83,12 @@ export function paint() {
           percentage: number;
         }[] = [];
 
-        const { multiplier, unit } = formatSeconds(block.lifetime);
+        let { multiplier, unit } = formatSeconds(block.lifetime);
+        if (unit === "yr" && block.lifetime * multiplier >= 1e3) {
+          const log10 = Math.log10(block.lifetime * multiplier) | 0;
+          unit = `1e${log10} yr`;
+          multiplier *= 10 ** -log10;
+        }
 
         for (const { time, isotopes } of block.history) {
           for (const [sym, portion] of Object.entries(isotopes)) {
@@ -98,7 +110,10 @@ export function paint() {
         const plot = Plot.plot({
           marks: [
             Plot.line(plotData, {
-              x: { value: "time", label: `time (${unit})` },
+              x: {
+                value: "time",
+                label: `time (${unit})`,
+              },
               y: { value: "percentage" },
               z: "sym",
               stroke: "sym",
@@ -191,10 +206,12 @@ function paintBlock(block: Block, blockState: BlockMouseState) {
   const isDragged = blockState === BlockMouseState.DRAGGED;
   if (!isDragged && !block.isStable) {
     const delta = (render.delta * timescale) / STEPS;
+    const shouldSaveMinorHistory = block.lifetime < timescale * STEPS;
     for (let i = 0; i < STEPS; i++) {
       block.tick(delta);
+      if (shouldSaveMinorHistory) block.saveHistory();
     }
-    block.saveHistory();
+    if (!shouldSaveMinorHistory) block.saveHistory();
   }
 
   const { width, height } = block;

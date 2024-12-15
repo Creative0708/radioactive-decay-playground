@@ -2,13 +2,14 @@ import * as fuzzysort from "fuzzysort";
 import { MouseState, render } from ".";
 import { canvas, ctx } from "../canvas";
 import { lerp } from "../math";
-import data, { allElements, dataPromise, Isotope, Sym } from "../data";
+import data, { allElements, Isotope, Sym } from "../data";
 import * as matter from "../matter";
 import { Bodies } from "matter-js";
 import { Block, blocks } from "../block";
 import {
   formatSeconds,
   getDarkColorForIsotope as getDarkColorForIsotope,
+  getFullNameForIsotope,
   rgbToHex,
 } from "../util";
 
@@ -127,9 +128,6 @@ const reprocess = () => {
 inputEl.addEventListener("input", reprocess);
 inputEl.addEventListener("change", reprocess);
 
-// inputEl.value = "polon";
-// dataPromise.then(reprocess);
-
 const SIDEBAR_WIDTH = 300;
 
 export function paint() {
@@ -227,7 +225,7 @@ export function paint() {
 
     showTooltip("element", (data: { iso: Isotope } | null, outer) => {
       outer.innerHTML = `
-          <h1>${elem.name}-${iso.mass} <span class="weak">${sym}, <sup>${iso.mass}</sup>${elem.symbol}</span></h1>
+          <h1>${getFullNameForIsotope(sym)} <span class="weak">${sym}, <sup>${iso.mass}</sup>${elem.symbol}</span></h1>
 
           ${iso.half_life === null ? "Stable" : "Half-life: " + formatSeconds(iso.half_life, 4).html}
           `;

@@ -29,7 +29,7 @@ addEventListener("load", () => {
 });
 
 addEventListener("keydown", (e) => {
-  if (e.key === "d") {
+  if (e.shiftKey && e.key === "d") {
     canvas.style.pointerEvents = "none";
     debugger;
   }

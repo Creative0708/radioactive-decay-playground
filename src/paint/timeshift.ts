@@ -22,8 +22,8 @@ for (const [scale, unit, maxPow] of [
   [1, "s", 10],
   [60, "min", 10],
   [60 * 60, "h", 1],
-  [60 * 60 * 24, "day", 1],
-  [60 * 60 * 24 * 7, "week", 1],
+  [60 * 60 * 24, " day", 1],
+  [60 * 60 * 24 * 7, " week", 1],
 ] satisfies [number, string, number][]) {
   for (let multiplier = 1; multiplier <= maxPow; multiplier *= 10) {
     TIMESHIFTS.push({
@@ -32,7 +32,20 @@ for (const [scale, unit, maxPow] of [
     });
   }
 }
-for (let multiplier = 1; multiplier <= 1e10; multiplier *= 10) {
+for (const multiplier of [
+  1,
+  1e1,
+  1e2,
+  1e3,
+  1e4,
+  1e5,
+  1e6,
+  1e7,
+  1e8,
+  1e9,
+  1e10,
+  1e20, // goshdarn bismuth-209
+]) {
   TIMESHIFTS.push({
     scale: 60 * 60 * 24 * 365.25 * multiplier,
     display:
@@ -79,6 +92,20 @@ const inputUpdate = () => {
 };
 sliderEl.addEventListener("input", inputUpdate);
 inputUpdate();
+
+addEventListener("keydown", (e) => {
+  if (e.target instanceof HTMLElement && e.target.tagName === "INPUT") return;
+  switch (e.key) {
+    case "ArrowLeft":
+      if (+sliderEl.value > +sliderEl.min) (sliderEl.value as any)--;
+      inputUpdate();
+      break;
+    case "ArrowRight":
+      if (+sliderEl.value < +sliderEl.max) (sliderEl.value as any)++;
+      inputUpdate();
+      break;
+  }
+});
 
 const timeEl = document.getElementById("timeshift-timeval")!;
 

@@ -103,11 +103,11 @@ export class Block {
 
       // this math isn't perfect but it's close enough for practical purposes.
       // also everything still sums to 1 and i'm not doing calculus for this
-      let totalDecayed =
-        composition[sym] * (1 - 2 ** (-delta / isotope.half_life));
+      const remainingFac = 1 - 2 ** (-delta / isotope.half_life);
+      let totalDecayed = composition[sym] * remainingFac;
 
       composition[sym] -= totalDecayed;
-      if (composition[sym] < 1e-3) {
+      if (composition[sym] < remainingFac ** 0.5 * 1e-3) {
         // fudge the decay a bit to get cleaner results
         totalDecayed += composition[sym];
         delete composition[sym];

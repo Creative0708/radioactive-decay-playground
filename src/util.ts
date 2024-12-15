@@ -36,6 +36,14 @@ export function getDarkColorForIsotope(
   ];
 }
 
+export function getFullNameForIsotope(iso: Sym): string {
+  const [elSym, mass] = iso.split("-");
+
+  const element = data.elements[data.elementSymbolMap[elSym]];
+
+  return `${element.name}-${mass}`;
+}
+
 function formatNumber(num: number, digits: number = 2): string {
   let log10 = Math.log10(num) | 0;
 

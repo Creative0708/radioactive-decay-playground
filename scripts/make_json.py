@@ -1,5 +1,4 @@
-from genericpath import exists
-import os.path as path
+import os, os.path as path
 dirname = path.abspath(path.join(__file__, path.pardir))
 
 import math
@@ -199,12 +198,17 @@ if __name__ == "__main__":
 
         isotopes[sym]["abundance"] = val * 0.01
 
-    isotopes = {
+    data = {
         "elements": elements,
         "isotopes": isotopes,
     }
 
     print(f"outputting to {out_path}")
 
+    try:
+        os.mkdir(path.dirname(out_path))
+    except FileExistsError:
+        pass
+
     with open(out_path, "w") as f:
-        json.dump(isotopes, f, separators=(",", ":"))
+        json.dump(data, f, separators=(",", ":"))

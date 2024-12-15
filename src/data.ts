@@ -1,3 +1,5 @@
+import * as jsonModuleRaw from "../scripts/dist/data.json";
+
 export type Sym = string;
 
 export type Isotope = {
@@ -60,11 +62,8 @@ export default data;
 
 export let allElements: Isotope[] = [];
 
-export const dataPromise = (async () => {
-  await new Promise((res) => addEventListener("load", res, { once: true }));
-
-  const request = await fetch("/pub/data.json");
-  const newData = await request.json();
+{
+  const newData = (jsonModuleRaw as any).default;
 
   Object.assign(data, newData);
 
@@ -80,7 +79,7 @@ export const dataPromise = (async () => {
   window.allElements = allElements;
   // @ts-ignore
   window.data = data;
-})();
+}
 
 // utility functions
 

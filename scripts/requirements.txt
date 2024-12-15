@@ -1,1 +1,1 @@
-nudel @ git+https://github.com/op3/nudel.git@93e6f3611981ecc31b144c94d44d2164022e34e7
+nudel @ git+https://github.com/Creative0708/nudel.git@2df3e2edc116143a9528a06a338776e7bcb28355

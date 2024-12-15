@@ -19,7 +19,7 @@ export const paint = (frameTime: number) => {
   {
     render.width = canvas.width;
     render.height = canvas.height;
-    render.delta = (frameTime - lastFrameTime) / 1000;
+    render.delta = Math.min((frameTime - lastFrameTime) / 1000, 0.1);
 
     render.mouseX = render.rawMouseX = globalMouseX;
     render.mouseY = render.rawMouseY = globalMouseY;

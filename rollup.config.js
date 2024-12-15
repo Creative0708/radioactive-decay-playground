@@ -11,39 +11,27 @@ import json from "@rollup/plugin-json";
 import terser from "@rollup/plugin-terser";
 import fs from "node:fs";
 
+const isProd = process.env["NODE_ENV"] === "production";
+
 // Modified from https://github.com/rollup/plugins/blob/master/packages/html/src/index.ts
-const template = ({ attributes, files, meta, publicPath, title }) => {
-  function makeHtmlAttributes(attributes) {
-    if (!attributes) {
-      return "";
-    }
-    const keys = Object.keys(attributes);
-    // eslint-disable-next-line no-param-reassign
-    return keys.reduce(
-      (result, key) => (result += ` ${key}="${attributes[key]}"`),
-      "",
-    );
-  }
-  const scripts = (files.js || [])
-    .map(({ fileName }) => {
-      const attrs = makeHtmlAttributes(attributes.script);
-      return `<script src="${publicPath}${fileName}"${attrs}></script>`;
-    })
-    .join("\n");
-  const metas = meta
-    .map((input) => {
-      const attrs = makeHtmlAttributes(input);
-      return `<meta${attrs}>`;
-    })
-    .join("\n");
+const template = ({ files }) => {
+  const script = files.js[0];
+
+  const css = fs.readFileSync(path.resolve("pub/index.css")).toString("utf8");
 
   const templatePath = path.resolve("index.html");
   const fileContents = fs.readFileSync(templatePath).toString("utf8");
   return fileContents
-    .replace("{htmlattr}", makeHtmlAttributes(attributes.html))
-    .replace("{metas}", metas)
-    .replace("{title}", title)
-    .replace("{scripts}", scripts);
+    .replace("{stylesheet}", () =>
+      isProd
+        ? `<style>${css}</style>`
+        : `<link rel="stylesheet" href="pub/index.css">`,
+    )
+    .replace("{scripts}", () =>
+      isProd
+        ? `<script>${script.code}</script>`
+        : `<script src="${script.fileName}"></script>`,
+    );
 };
 
 // https://github.com/rollup/rollup/issues/3414#issuecomment-751699335
@@ -57,17 +45,15 @@ const watcher = (globs) => ({
   },
 });
 
-const is_prod = process.env["NODE_ENV"] === "production";
-
 /** { @type import("rollup").InputOptions } */
 export default {
   input: ["src/main.ts"],
   output: {
     dir: "dist",
-    sourcemap: !is_prod,
+    sourcemap: !isProd,
   },
   plugins: [
-    !is_prod && watcher(["pub/**", "index.html"]),
+    !isProd && watcher(["pub/**", "index.html"]),
     nodeResolve(),
     commonjs(),
     json(),
@@ -90,9 +76,9 @@ export default {
       ],
     }),
 
-    is_prod && terser(),
+    isProd && terser(),
 
-    !is_prod && livereload(),
-    !is_prod && serve("dist"),
+    !isProd && livereload(),
+    !isProd && serve("dist"),
   ],
 };
