@@ -6,6 +6,7 @@ body {
     height: 100vh;
 
     user-select: none;
+    position: fixed;
 }
 body.nojs {
     display: grid;
@@ -120,6 +121,10 @@ h3 {
     width: 500px;
     padding: 1em;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 1em;
 
     z-index: 1;
 }
@@ -145,6 +150,7 @@ button:hover {
     right: 0;
     margin-top: 24px;
     width: 200px;
+    padding-bottom: 140px;
 
     position: absolute;
     display: grid;
@@ -157,8 +163,7 @@ button:hover {
     }
 
     > label {
-        position: absolute;
-        bottom: -1.5em;
+        padding-top: 0.6em;
     }
 
     #timeshift-time {
@@ -185,6 +190,8 @@ button:hover {
     pointer-events: none;
     transition: opacity 0.2s;
 
+    z-index: 100000000;
+
     h1 {
         font-size: 1.5em;
     }
@@ -192,6 +199,21 @@ button:hover {
     :first-child {
         margin-block-start: 0;
     }
+}
+
+#fake-canvas-container {
+    position: absolute;
+    right: 0;
+    width: calc(100vw - 330px);
+    height: 100vh;
+}
+
+.credits {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    padding: 1em;
+    z-index: -100;
 }
 
 .weak {

@@ -2,6 +2,7 @@ import html from "@rollup/plugin-html";
 import livereload from "rollup-plugin-livereload";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import serve from "rollup-plugin-serve";
+import css from "rollup-plugin-import-css";
 import copy from "rollup-plugin-copy";
 import glob from "glob";
 import path from "path";
@@ -17,15 +18,17 @@ const isProd = process.env["NODE_ENV"] === "production";
 const template = ({ files }) => {
   const script = files.js[0];
 
-  const css = fs.readFileSync(path.resolve("pub/index.css")).toString("utf8");
+  // const css = fs.readFileSync(path.resolve("pub/index.css")).toString("utf8");
+
+  const cssBundle = files.css[0];
 
   const templatePath = path.resolve("index.html");
   const fileContents = fs.readFileSync(templatePath).toString("utf8");
   return fileContents
     .replace("{stylesheet}", () =>
       isProd
-        ? `<style>${css}</style>`
-        : `<link rel="stylesheet" href="pub/index.css">`,
+        ? `<style>${cssBundle.source}</style>`
+        : `<link rel="stylesheet" href="${cssBundle.fileName}">`,
     )
     .replace("{scripts}", () =>
       isProd
@@ -65,6 +68,7 @@ export default {
         target: "es6",
       },
     }),
+    css(),
     html({
       title: "TODO",
       template,

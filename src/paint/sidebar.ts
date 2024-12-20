@@ -40,13 +40,16 @@ resultsEl.addEventListener("mousedown", (e) => {
   if (!isoEl) return;
 
   const sym = isoEl.dataset.sym!;
+  addBlock(sym, e.pageX, e.pageY);
+});
 
-  const body = Bodies.rectangle(e.pageX, e.pageY, 100, 60, {
+export function addBlock(sym: Sym, x: number, y: number) {
+  const body = Bodies.rectangle(x, y, 100, 60, {
     restitution: 0.5,
   });
   matter.add(body, true);
   blocks.set(body.id, new Block(sym, 100, 60));
-});
+}
 
 let hoveredSym: Sym | null = null;
 document.body.addEventListener("mousemove", (e) => {
@@ -128,6 +131,16 @@ const reprocess = () => {
 inputEl.addEventListener("input", reprocess);
 inputEl.addEventListener("change", reprocess);
 
+export function setSidebarOpen(open: boolean) {
+  if (open === isSidebarOpen) return;
+  isSidebarOpen = open;
+  if (open) {
+    sidebarEl.classList.add("sidebar-open");
+  } else {
+    sidebarEl.classList.remove("sidebar-open");
+  }
+}
+
 const SIDEBAR_WIDTH = 300;
 
 export function paint() {
@@ -144,12 +157,7 @@ export function paint() {
   if (interaction) {
     render.cursor = "pointer";
     if (interaction.state == MouseState.PRESSED) {
-      isSidebarOpen = !isSidebarOpen;
-      if (isSidebarOpen) {
-        sidebarEl.classList.add("sidebar-open");
-      } else {
-        sidebarEl.classList.remove("sidebar-open");
-      }
+      setSidebarOpen(!isSidebarOpen);
     }
   }
 

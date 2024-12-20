@@ -77,7 +77,7 @@ export function paint() {
       if (now) {
         const isotope = data.isotopes[now];
         descriptorEl.innerHTML =
-          isotope.half_life === null
+          isotope?.half_life === null
             ? `${now} is stable`
             : `${now} has a half-life of ${formatSeconds(isotope.half_life).html}`;
       } else {

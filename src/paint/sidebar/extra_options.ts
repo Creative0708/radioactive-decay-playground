@@ -6,7 +6,7 @@ const extraOptionsEl = document.getElementById("extra-options")!;
 
 const keyListeners: { [key: string]: () => void } = {};
 
-const extraButton = (
+export const extraButton = (
   name: string,
   handler: (el: HTMLElement) => void,
   key?: string,
