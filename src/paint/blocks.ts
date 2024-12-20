@@ -11,7 +11,7 @@ import {
 } from "../util";
 import { showTooltip } from "./tooltip";
 import * as Plot from "@observablehq/plot";
-import { Sym } from "../data";
+import data, { Sym } from "../data";
 import { timescale } from "./timeshift";
 
 enum BlockMouseState {
@@ -41,19 +41,24 @@ export function paint() {
 
     const block = blocks.get(hoveredBody.id)!;
 
-    showTooltip("block", (data: { id: number } | null, el) => {
-      const isNew = data?.id !== hoveredBody.id;
+    showTooltip("block", (tooltipData: { id: number } | null, el) => {
+      const isNew = tooltipData?.id !== hoveredBody.id;
 
       if (!isNew && block.isStable) return null;
 
       let headingEl: HTMLElement;
+      let descriptorEl: HTMLElement;
       if (isNew) {
         el.replaceChildren();
 
         headingEl = document.createElement("h1");
+        descriptorEl = document.createElement("p");
+        descriptorEl.id = "iso-descriptor";
         el.appendChild(headingEl);
+        el.appendChild(descriptorEl);
       } else {
         headingEl = el.querySelector("h1")!;
+        descriptorEl = el.querySelector("#iso-descriptor")!;
       }
 
       const [approxSym, approxPortion] = block.approximate();
@@ -68,6 +73,16 @@ export function paint() {
         (now === block.originalSym
           ? ""
           : ` <span class="weak">(originally ${block.originalSym})</span>`);
+
+      if (now) {
+        const isotope = data.isotopes[now];
+        descriptorEl.innerHTML =
+          isotope.half_life === null
+            ? `${now} is stable`
+            : `${now} has a half-life of ${formatSeconds(isotope.half_life).html}`;
+      } else {
+        descriptorEl.innerHTML = "&nbsp";
+      }
 
       if (block.history.length === 1 && block.isStable) {
         const pEl = document.createElement("p");
@@ -90,7 +105,13 @@ export function paint() {
           multiplier *= 10 ** -log10;
         }
 
+        // 1 point every 2 pixels
+        const timeInterval = (block.lifetime / width) * 2;
+        let nextTime = 0;
         for (const { time, isotopes } of block.history) {
+          if (time < nextTime) continue;
+          nextTime = time + timeInterval;
+
           for (const [sym, portion] of Object.entries(isotopes)) {
             plotData.push({
               sym,

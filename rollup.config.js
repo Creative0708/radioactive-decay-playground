@@ -70,10 +70,7 @@ export default {
       template,
     }),
     copy({
-      targets: [
-        { src: "pub", dest: "dist" },
-        { src: "scripts/dist/data.json", dest: "dist/pub" },
-      ],
+      targets: [{ src: "pub", dest: "dist" }],
     }),
 
     isProd && terser(),
