@@ -2,7 +2,9 @@ import data, { Isotope, PElement, Sym } from "./data";
 
 export function rgbToHex(r: number, g: number, b: number): string {
   function component(num: number): string {
-    return (num < 0 ? 0 : num > 255 ? 255 : num).toString(16).padStart(2, "0");
+    return ((num < 0 ? 0 : num > 255 ? 255 : num) | 0)
+      .toString(16)
+      .padStart(2, "0");
   }
   return `#${component(r)}${component(g)}${component(b)}`;
 }

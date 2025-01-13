@@ -14,6 +14,7 @@ export class Block {
     [isotope: Sym]: number;
   };
   isStable: boolean;
+  hasBeenStable: boolean = true;
   history: {
     time: number;
     isotopes: {
@@ -139,9 +140,7 @@ export class Block {
       addDecay(betaDecayed, isotope.mass, isotope.protons + 1);
     }
 
-    if (!didDecay) {
-      this.isStable = true;
-    }
+    if (!didDecay) this.isStable = true;
 
     this.lifetime += delta;
   }

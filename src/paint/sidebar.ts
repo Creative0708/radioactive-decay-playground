@@ -44,8 +44,10 @@ resultsEl.addEventListener("mousedown", (e) => {
 });
 
 export function addBlock(sym: Sym, x: number, y: number) {
+  const [_el, mass] = sym.split("-");
   const body = Bodies.rectangle(x, y, 100, 60, {
     restitution: 0.5,
+    frictionAir: 0.9 / +mass,
   });
   matter.add(body, true);
   blocks.set(body.id, new Block(sym, 100, 60));
@@ -70,6 +72,7 @@ const reprocess = () => {
   const LIMIT = 50;
 
   const search = inputEl.value;
+  localStorage.setItem("prevSearch", search);
   const searchedElements = fuzzysort.go(search, allElements, {
     keys: [
       "sym",
@@ -130,6 +133,11 @@ const reprocess = () => {
 };
 inputEl.addEventListener("input", reprocess);
 inputEl.addEventListener("change", reprocess);
+const prevSearch = localStorage.getItem("prevSearch");
+if (prevSearch) {
+  inputEl.value = prevSearch;
+  reprocess();
+}
 
 export function setSidebarOpen(open: boolean) {
   if (open === isSidebarOpen) return;

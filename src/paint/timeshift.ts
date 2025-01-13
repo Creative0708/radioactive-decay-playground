@@ -4,6 +4,7 @@ import { ctx } from "../canvas";
 import { TAU } from "../math";
 import * as matter from "../matter";
 import { formatSeconds, rgbToHex } from "../util";
+import { keyListeners } from "./sidebar/extra_options";
 
 export let timescale = 1;
 
@@ -62,10 +63,17 @@ const SECOND_OFFSET = TIMESHIFTS.findIndex((ts) => ts.scale === 1);
 const containerEl = document.getElementById("timeshift-container")!;
 const labelEl = containerEl.querySelector("label")!;
 const sliderEl = containerEl.querySelector("input")!;
-sliderEl.type = "range";
 sliderEl.min = "0";
 sliderEl.max = String(TIMESHIFTS.length - 1);
 sliderEl.value = String(SECOND_OFFSET);
+
+const pauseButtonEl = containerEl.querySelector("button")!;
+let paused = false;
+const togglePaused = () => {
+  paused = !paused;
+  inputUpdate();
+};
+keyListeners[" "] = togglePaused;
 
 let val = 0;
 let clockStrokeStyle = "";
@@ -75,8 +83,8 @@ const inputUpdate = () => {
 
   const currTimescale = TIMESHIFTS[val];
 
-  labelEl.innerHTML = `1s = ${currTimescale.display}`;
-  timescale = currTimescale.scale;
+  labelEl.innerHTML = paused ? "Paused" : `1s = ${currTimescale.display}`;
+  timescale = paused ? 0 : currTimescale.scale;
 
   // cosmetic changes
   const centered_val = val - SECOND_OFFSET;
@@ -91,6 +99,8 @@ const inputUpdate = () => {
   clockFillStyle = rgbToHex((r >> 3) + 224, (g >> 3) + 224, (b >> 3) + 224);
 };
 sliderEl.addEventListener("input", inputUpdate);
+pauseButtonEl.addEventListener("click", togglePaused);
+
 inputUpdate();
 
 addEventListener("keydown", (e) => {
@@ -113,7 +123,7 @@ let seconds = 0;
 
 export const paint = () => {
   // little clock icon
-  ctx.translate(render.width - 100, 170);
+  ctx.translate(render.width - 100, 212);
   {
     const CLOCK_SIZE = 45;
 

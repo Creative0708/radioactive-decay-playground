@@ -4,7 +4,7 @@ import { world } from "../../matter";
 
 const extraOptionsEl = document.getElementById("extra-options")!;
 
-const keyListeners: { [key: string]: () => void } = {};
+export const keyListeners: { [key: string]: () => void } = {};
 
 export const extraButton = (
   name: string,
@@ -34,7 +34,7 @@ addEventListener("keydown", (e) => {
 
 let clearAllTimeout: null | number = null;
 extraButton(
-  "Clear all and reset",
+  "Clear all and reset (r)",
   (el) => {
     if (el.dataset.areYouSure) {
       window.clearTimeout(clearAllTimeout!);
@@ -59,4 +59,13 @@ extraButton(
     }
   },
   "r",
+);
+
+extraButton(
+  "Fullscreen (f)",
+  () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen();
+  },
+  "f",
 );

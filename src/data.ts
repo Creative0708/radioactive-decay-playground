@@ -75,10 +75,10 @@ export let allElements: Isotope[] = [];
 
   allElements = [...Object.values(data.isotopes)];
 
-  // @ts-ignore
-  window.allElements = allElements;
-  // @ts-ignore
-  window.data = data;
+  // // @ts-ignore
+  // window.allElements = allElements;
+  // // @ts-ignore
+  // window.data = data;
 }
 
 // utility functions

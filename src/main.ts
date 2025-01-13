@@ -12,4 +12,4 @@ const renderLoop = (frameTime: number) => {
 };
 requestAnimationFrame(renderLoop);
 
-addEventListener("load", welcome);
+addEventListener("load", () => welcome());

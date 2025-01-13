@@ -44,7 +44,7 @@ export function paint() {
     showTooltip("block", (tooltipData: { id: number } | null, el) => {
       const isNew = tooltipData?.id !== hoveredBody.id;
 
-      if (!isNew && block.isStable) return null;
+      if (!isNew && block.hasBeenStable) return null;
 
       let headingEl: HTMLElement;
       let descriptorEl: HTMLElement;
@@ -77,9 +77,11 @@ export function paint() {
       if (now) {
         const isotope = data.isotopes[now];
         descriptorEl.innerHTML =
-          isotope?.half_life === null
-            ? `${now} is stable`
-            : `${now} has a half-life of ${formatSeconds(isotope.half_life).html}`;
+          isotope == null
+            ? `<span class="warning">${now} doesn't have any data. This could be for a variety of reasons, but it is treated as stable in this application.</span>`
+            : isotope.half_life == null
+              ? `${now} is stable`
+              : `${now} has a half-life of ${formatSeconds(isotope.half_life).html}`;
       } else {
         descriptorEl.innerHTML = "&nbsp";
       }
@@ -108,8 +110,10 @@ export function paint() {
         // 1 point every 2 pixels
         const timeInterval = (block.lifetime / width) * 2;
         let nextTime = 0;
-        for (const { time, isotopes } of block.history) {
-          if (time < nextTime) continue;
+        const isotopeSet = new Set<Sym>();
+        for (let i = 0; i < block.history.length; i++) {
+          const { time, isotopes } = block.history[i];
+          if (time < nextTime && i < block.history.length - 1) continue;
           nextTime = time + timeInterval;
 
           for (const [sym, portion] of Object.entries(isotopes)) {
@@ -118,14 +122,15 @@ export function paint() {
               time: time * multiplier,
               percentage: portion * 100,
             });
+            isotopeSet.add(sym);
           }
         }
         const colors: string[] = [];
-        const allIsotopes = [...block.allIsotopes];
+        const allIsotopes = [...isotopeSet];
         allIsotopes.sort();
         for (const sym of allIsotopes) {
           const [r, g, b] = getDarkColorForIsotope(sym);
-          colors.push(rgbToHex(r * 2, g * 2, b * 2));
+          colors.push(rgbToHex(r * 1.5, g * 1.5, b * 1.5));
         }
 
         const plot = Plot.plot({
@@ -164,6 +169,8 @@ export function paint() {
 
       return isNew ? { id: hoveredBody.id } : null;
     });
+
+    block.hasBeenStable = block.isStable;
   }
 
   ctx.textAlign = "center";
@@ -220,7 +227,7 @@ export function paint() {
   matter.tick(render.delta);
 }
 
-const STEPS = 16;
+const STEPS = 64;
 
 function paintBlock(block: Block, blockState: BlockMouseState) {
   // also used for if this is being painted back-to-front

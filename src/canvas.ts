@@ -28,9 +28,9 @@ addEventListener("load", () => {
   addEventListener("resize", handleCanvasSize);
 });
 
-addEventListener("keydown", (e) => {
-  if (e.key === "d") {
-    canvas.style.pointerEvents = "none";
-    debugger;
-  }
-});
+// addEventListener("keydown", (e) => {
+//   if (e.key === "d") {
+//     canvas.style.pointerEvents = "none";
+//     debugger;
+//   }
+// });
