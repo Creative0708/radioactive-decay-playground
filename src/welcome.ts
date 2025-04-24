@@ -1,6 +1,5 @@
 import introJs from "intro.js";
 import "intro.js/introjs.css";
-import { addBlock, setSidebarOpen } from "./paint/sidebar";
 import { extraButton } from "./paint/sidebar/extra_options";
 
 const searchBox = document.querySelector("#search-box")! as HTMLInputElement;
@@ -47,7 +46,7 @@ export function welcome(force = false) {
         },
         {
           element: document.querySelector("#extra-options") as HTMLElement,
-          intro: `This are some extra options. The "Clear all" button will delete all the blocks (you can also activate this with the "r" key). The "Fullscreen" button will enter or exit fullscreen mode. The "Introduction" button will show this introduction again, if you need it.`,
+          intro: `These are some extra options. The "Clear all" button will delete all the blocks (you can also activate this with the "r" key). The "Fullscreen" button will enter or exit fullscreen mode. The "Introduction" button will show this introduction again, if you need it.`,
         },
         {
           intro: `Thanks for trying out the Radioactive Decay Playground! I hope you have fun. ♥️☢️🛝`,
